@@ -15,7 +15,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddSwiftBetsObservability("swiftbets-wallet");
 builder.Services.AddSwiftBetsWeb();
 builder.Services.AddSwiftBetsJwtBearer(builder.Configuration);
-builder.Services.AddGrpc(options => options.EnableDetailedErrors = builder.Environment.IsDevelopment());
+builder.Services.AddGrpc(options =>
+{
+    options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+    options.Interceptors.Add<WalletFaultInterceptor>();
+});
 builder.Services.AddScoped<IValidator<TopUpEndpoint.TopUpRequest>, TopUpEndpoint.TopUpRequestValidator>();
 builder.Services.AddWalletApplication();
 builder.Services.AddWalletInfrastructure(builder.Configuration);
@@ -28,6 +32,7 @@ app.UseAuthorization();
 app.MapSwiftBetsOperationalEndpoints();
 app.MapGrpcService<WalletGrpcService>();
 app.MapTopUp();
+app.MapSwiftBetsFaultEndpoints();
 
 await app.RunAsync();
 return 0;
