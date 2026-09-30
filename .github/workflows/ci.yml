@@ -15,6 +15,6 @@ jobs:
     with:
       images: '[{"name": "swiftbets-placement", "dockerfile": "deploy/SwiftBets.Placement.Api.Dockerfile"}, {"name": "swiftbets-placement-migrator", "dockerfile": "deploy/SwiftBets.Placement.Migrator.Dockerfile"}, {"name": "swiftbets-wallet", "dockerfile": "deploy/SwiftBets.Wallet.Api.Dockerfile"}, {"name": "swiftbets-wallet-migrator", "dockerfile": "deploy/SwiftBets.Wallet.Migrator.Dockerfile"}]'
     permissions:
-      contents: write
+      contents: read
       packages: write
       security-events: write
