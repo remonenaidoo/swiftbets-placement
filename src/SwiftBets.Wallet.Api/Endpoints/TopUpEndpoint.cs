@@ -2,6 +2,7 @@ using FluentValidation;
 using SwiftBets.BuildingBlocks.Web;
 using SwiftBets.Contracts.Errors;
 using SwiftBets.Wallet.Application.Ledger;
+using SwiftBets.Wallet.Application.Ports;
 
 namespace SwiftBets.Wallet.Api.Endpoints;
 
@@ -23,8 +24,18 @@ public static class TopUpEndpoint
         })
         .AddEndpointFilter<ValidationFilter<TopUpRequest>>()
         .RequireAuthorization(Roles.Operator);
+
+        endpoints.MapPut("/accounts/{accountId:guid}/blacklist", (Guid accountId, HttpContext context, IWalletStore store) => SetAsync(accountId, true, context, store))
+            .RequireAuthorization(Roles.Operator);
+        endpoints.MapDelete("/accounts/{accountId:guid}/blacklist", (Guid accountId, HttpContext context, IWalletStore store) => SetAsync(accountId, false, context, store))
+            .RequireAuthorization(Roles.Operator);
         return endpoints;
     }
+
+    private static async Task<IResult> SetAsync(Guid accountId, bool blacklisted, HttpContext context, IWalletStore store) =>
+        await store.SetBlacklistedAsync(accountId, blacklisted, context.RequestAborted)
+            ? Results.Ok(new { accountId, blacklisted })
+            : Error.NotFound("account_not_found", "No punter account with that id.").ToHttpResult(context);
 
     public sealed record TopUpRequest(long MinorUnits, string Currency);
 

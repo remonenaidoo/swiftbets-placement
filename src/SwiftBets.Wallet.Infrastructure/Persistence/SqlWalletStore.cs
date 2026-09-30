@@ -34,4 +34,10 @@ public sealed class SqlWalletStore(ISqlConnectionFactory connections, TimeProvid
         await using var connection = await connections.OpenAsync(cancellationToken);
         return (await connection.QuerySingleOrDefaultAsync<ReservationRow>(new CommandDefinition(Sql.Get("Wallet.FindReservationByKey"), new { IdempotencyKey = reserveIdempotencyKey }, cancellationToken: cancellationToken)))?.ToDomain();
     }
+
+    public async Task<bool> SetBlacklistedAsync(Guid accountId, bool isBlacklisted, CancellationToken cancellationToken)
+    {
+        await using var connection = await connections.OpenAsync(cancellationToken);
+        return await connection.ExecuteScalarAsync<int>(new CommandDefinition(Sql.Get("Wallet.SetBlacklisted"), new { AccountId = accountId, IsBlacklisted = isBlacklisted }, cancellationToken: cancellationToken)) == 1;
+    }
 }

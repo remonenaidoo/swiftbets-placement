@@ -66,6 +66,25 @@ public sealed class WalletLedgerTests(SqlServerFixture sql)
         outcome.Failure.ShouldBe(WalletFailure.AccountNotFound);
     }
 
+    [Fact]
+    public async Task Blacklisted_punter_receives_no_credit()
+    {
+        var (store, _) = await WalletAsync();
+        await store.SetBlacklistedAsync(Punter, true, CancellationToken.None);
+
+        (await new TransferHandler(new PostingRunner(store)).CreditAsync("win-2", Punter, 5_000, "ZAR", "coupon")).Failure.ShouldBe(WalletFailure.AccountBlacklisted);
+    }
+
+    [Fact]
+    public async Task Lifting_the_blacklist_lets_the_credit_through()
+    {
+        var (store, _) = await WalletAsync();
+        await store.SetBlacklistedAsync(Punter, true, CancellationToken.None);
+        await store.SetBlacklistedAsync(Punter, false, CancellationToken.None);
+
+        (await new TransferHandler(new PostingRunner(store)).CreditAsync("win-3", Punter, 5_000, "ZAR", "coupon")).WasApplied.ShouldBeTrue();
+    }
+
     private async Task<(SqlWalletStore Store, string ConnectionString)> WalletAsync()
     {
         var connectionString = await sql.CreateDatabaseAsync("wallet_" + Guid.NewGuid().ToString("N")[..10]);

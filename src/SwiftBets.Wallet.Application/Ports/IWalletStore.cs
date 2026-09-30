@@ -11,4 +11,7 @@ public interface IWalletStore
     Task<Reservation?> GetReservationAsync(Guid reservationId, CancellationToken cancellationToken);
 
     Task<Reservation?> FindReservationByKeyAsync(string reserveIdempotencyKey, CancellationToken cancellationToken);
+
+    /// <summary>A blacklisted punter keeps their balance but receives no credits; payouts to them are dead-lettered.</summary>
+    Task<bool> SetBlacklistedAsync(Guid accountId, bool isBlacklisted, CancellationToken cancellationToken);
 }
