@@ -6,5 +6,6 @@
     <PackageReference Include="SwiftBets.BuildingBlocks.Web" />
     <PackageReference Include="FluentValidation" />
     <ProjectReference Include="../SwiftBets.Placement.Infrastructure/SwiftBets.Placement.Infrastructure.csproj" />
+    <ProjectReference Include="../SwiftBets.History.Infrastructure/SwiftBets.History.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

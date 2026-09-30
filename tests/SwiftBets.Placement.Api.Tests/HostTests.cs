@@ -70,6 +70,8 @@ public sealed class HostTests : IClassFixture<HostTests.Factory>
             builder.UseSetting("Jwt:Authority", TestJwt.Issuer);
             builder.UseSetting("Identity:Issuer", TestJwt.Issuer);
             builder.UseSetting("Wallet:GrpcAddress", "http://127.0.0.1:1");
+            builder.UseSetting("ConnectionStrings:SbHistory", "Host=127.0.0.1;Port=1;Database=x;Username=x;Password=x;Timeout=1");
+            builder.UseSetting("History:RunProjector", "false");
             builder.ConfigureServices(services => services.UseTestJwt());
         }
     }

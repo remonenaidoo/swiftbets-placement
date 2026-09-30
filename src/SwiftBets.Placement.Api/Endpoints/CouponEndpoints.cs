@@ -1,6 +1,8 @@
 using FluentValidation;
 using SwiftBets.BuildingBlocks.Web;
 using SwiftBets.Contracts.Errors;
+using SwiftBets.Contracts.Serialization;
+using SwiftBets.History.Application;
 using SwiftBets.Placement.Application.Placing;
 using SwiftBets.Placement.Application.Ports;
 using SwiftBets.Placement.Domain.Coupons;
@@ -45,6 +47,10 @@ public static class CouponEndpoints
                 : Results.Content(PlacementResponses.Coupon(coupon), "application/json");
         })
         .RequireAuthorization();
+
+        endpoints.MapGet("/me/coupons", async (HttpContext context, IHistoryStore history, int? limit, CancellationToken cancellationToken) =>
+            Results.Json(await history.ListAsync(PunterId(context), limit ?? 25, cancellationToken), ContractJson.Options))
+        .RequireAuthorization(Roles.Punter);
 
         endpoints.MapGet("/me/balance", async (HttpContext context, IWalletClient wallet, CancellationToken cancellationToken) =>
         {
