@@ -42,9 +42,6 @@ internal sealed class InMemoryCouponStore : ICouponStore
     public Task MarkCompensatedAsync(Guid couponId, int responseStatus, string responseJson) =>
         Transition(couponId, SagaState.Compensating, i => i with { State = SagaState.Compensated, ResponseStatus = responseStatus, ResponseJson = responseJson });
 
-    public Task<IReadOnlyDictionary<string, long>> FixtureLiabilityAsync(IReadOnlyList<string> fixtureIds, CancellationToken cancellationToken) =>
-        Task.FromResult<IReadOnlyDictionary<string, long>>(new Dictionary<string, long>());
-
     public Task<IReadOnlyList<SagaIntent>> ClaimExpiredAsync(DateTimeOffset now, int batchSize, TimeSpan lease, CancellationToken cancellationToken)
     {
         var due = Intents.Values.Where(i => i.State is SagaState.Started or SagaState.Reserved or SagaState.Persisted or SagaState.Compensating && i.DeadlineAt < now).ToList();

@@ -4,13 +4,32 @@ using SwiftBets.Wallet.Domain;
 namespace SwiftBets.Wallet.Application.Ledger;
 
 /// <summary>
-/// The one way money moves: inside a single transaction, check the idempotency key under lock, replay the original
-/// result on a repeat, otherwise apply the movement and store the balanced posting with its key. Writes are never
-/// cancellable; a token honoured between debit and credit would leave money half-moved.
+/// The one way money moves: in one transaction, look the idempotency key up, lock the account row, apply the movement
+/// and store the balanced posting under its key. The key's unique index is the arbiter: if a concurrent request with
+/// the same key commits first, this one rolls back and replays that result. No range locks, so unrelated keys never
+/// queue behind each other. Writes are never cancellable; a token honoured between debit and credit would leave money
+/// half-moved.
 /// </summary>
 public sealed class PostingRunner(IWalletStore store)
 {
     public async Task<WalletOutcome> RunAsync(
+        string idempotencyKey,
+        PostingKind kind,
+        Guid accountId,
+        long amount,
+        Func<IWalletTransaction, Task<(WalletFailure? Failure, Posting? Posting, IReadOnlyList<Account> Changed, Reservation? Reservation, bool IsNewReservation)>> apply)
+    {
+        try
+        {
+            return await AttemptAsync(idempotencyKey, kind, accountId, amount, apply);
+        }
+        catch (DuplicateIdempotencyKeyException)
+        {
+            return await AttemptAsync(idempotencyKey, kind, accountId, amount, apply);
+        }
+    }
+
+    private async Task<WalletOutcome> AttemptAsync(
         string idempotencyKey,
         PostingKind kind,
         Guid accountId,

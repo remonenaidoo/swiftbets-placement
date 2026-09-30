@@ -8,6 +8,8 @@ namespace SwiftBets.Placement.Infrastructure.Identity;
 /// <summary>Seeds the demo users (ids match the wallet's demo accounts) when Identity:SeedDemoUsers is on.</summary>
 public sealed class DemoUserSeeder(IServiceScopeFactory scopes, IOptions<IdentityOptions> options) : IHostedService
 {
+    private static readonly string[] PunterRole = ["Punter"];
+
     public static readonly IReadOnlyList<(Guid Id, string Username, string[] Roles)> Users =
     [
         (Guid.Parse("10000000-0000-0000-0000-000000000001"), "punter1", ["Punter"]),
@@ -29,9 +31,12 @@ public sealed class DemoUserSeeder(IServiceScopeFactory scopes, IOptions<Identit
         await using var scope = scopes.CreateAsyncScope();
         var store = scope.ServiceProvider.GetRequiredService<IIdentityStore>();
         var hasher = scope.ServiceProvider.GetRequiredService<Application.Identity.IPasswordHasher>();
-        foreach (var (id, username, roles) in Users)
+        var hash = hasher.Hash(options.Value.DemoPassword);
+        var loadUsers = Enumerable.Range(1, options.Value.LoadTestUserCount)
+            .Select(i => (Guid.Parse($"40000000-0000-0000-0000-{i:D12}"), $"load{i:D3}", PunterRole));
+        foreach (var (id, username, roles) in Users.Concat(loadUsers))
         {
-            await store.UpsertUserAsync(new UserRecord(id, username, hasher.Hash(options.Value.DemoPassword), roles), cancellationToken);
+            await store.UpsertUserAsync(new UserRecord(id, username, hash, roles), cancellationToken);
         }
     }
 

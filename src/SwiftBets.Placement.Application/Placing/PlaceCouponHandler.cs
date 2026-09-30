@@ -17,6 +17,7 @@ namespace SwiftBets.Placement.Application.Placing;
 /// </summary>
 public sealed class PlaceCouponHandler(
     ICouponStore store,
+    ILiabilityLedger liabilities,
     IOfferReader offer,
     IWalletClient wallet,
     IFaultPoint faults,
@@ -50,7 +51,7 @@ public sealed class PlaceCouponHandler(
         var accepted = legs!;
         var totalOdds = PayoutMath.TotalOdds(accepted.Select(l => l.Odds));
         var payout = PayoutMath.Payout(command.Stake, totalOdds);
-        var liability = await store.FixtureLiabilityAsync([.. accepted.Select(l => l.FixtureId)], cancellationToken);
+        var liability = await liabilities.GetAsync([.. accepted.Select(l => l.FixtureId)], cancellationToken);
         if (liability.Any(l => l.Value + payout > RiskLimits.Default.MaxFixtureLiability))
         {
             return await RejectAsync(command, couponId, "fixture_liability_exceeded", "The fixture has reached its liability limit.");
@@ -84,6 +85,7 @@ public sealed class PlaceCouponHandler(
             return await AbandonAsync(couponId, reservationId);
         }
 
+        await liabilities.AddAsync([.. accepted.Select(l => l.FixtureId)], payout);
         await faults.HitAsync(FaultAfterPersist, CancellationToken.None);
 
         if ((await wallet.CaptureAsync(SagaKeys.Capture(couponId), reservationId)).Status == WalletCallStatus.Succeeded)

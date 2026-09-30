@@ -52,7 +52,7 @@ public sealed class PlaceCouponHandlerTests
         var store = new InMemoryCouponStore();
         var wallet = new InMemoryWallet();
         var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        var handler = new PlaceCouponHandler(store, new StaticOffer(StaticOffer.Home), wallet, new ArmableFaults(), Options.Create(new PlacementOptions()), clock);
+        var handler = new PlaceCouponHandler(store, new InMemoryLiability(), new StaticOffer(StaticOffer.Home), wallet, new ArmableFaults(), Options.Create(new PlacementOptions()), clock);
         return (handler, store, wallet, clock, new SweepOrphansHandler(store, wallet, clock, NullLogger<SweepOrphansHandler>.Instance));
     }
 }

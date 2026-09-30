@@ -20,8 +20,6 @@ public interface ICouponStore
 
     Task MarkCompensatedAsync(Guid couponId, int responseStatus, string responseJson);
 
-    Task<IReadOnlyDictionary<string, long>> FixtureLiabilityAsync(IReadOnlyList<string> fixtureIds, CancellationToken cancellationToken);
-
     /// <summary>
     /// Claims non-terminal intents past their deadline under a lease, so concurrent sweepers never share one. Unpersisted
     /// intents move to Compensating in the same statement, which stops the live saga advancing them.

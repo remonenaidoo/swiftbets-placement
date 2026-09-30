@@ -26,4 +26,8 @@ public sealed class IdentityOptions
     public bool SeedDemoUsers { get; set; }
 
     public string DemoPassword { get; set; } = string.Empty;
+
+    /// <summary>Extra punters (load001, load002, ...) for load testing; they share the demo password.</summary>
+    [Range(0, 10_000)]
+    public int LoadTestUserCount { get; set; }
 }

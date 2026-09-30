@@ -1,3 +1,3 @@
 SELECT PostingId, Kind, AccountId, Amount, ReservationId
-FROM wallet.Postings WITH (UPDLOCK, HOLDLOCK)
+FROM wallet.Postings
 WHERE IdempotencyKey = @IdempotencyKey;

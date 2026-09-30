@@ -33,6 +33,7 @@ public static class InfrastructureRegistration
         services.AddValidatedOptions<WalletClientOptions>(configuration, WalletClientOptions.SectionName);
 
         services.AddSingleton<ICouponStore, SqlCouponStore>();
+        services.AddSingleton<ILiabilityLedger, RedisLiabilityLedger>();
         services.AddSingleton<IOfferReader, RedisOfferReader>();
         services.AddSingleton<IIdentityStore, SqlIdentityStore>();
         services.AddSingleton<ITokenIssuer, RsaTokenIssuer>();

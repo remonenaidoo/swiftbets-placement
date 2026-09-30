@@ -22,9 +22,27 @@ internal sealed class SqlWalletTransaction(SqlConnection connection, SqlTransact
     public async Task<Reservation?> LockReservationAsync(Guid reservationId) =>
         (await connection.QuerySingleOrDefaultAsync<ReservationRow>(Sql.Get("Wallet.LockReservation"), new { ReservationId = reservationId }, transaction))?.ToDomain();
 
+    public async Task<Account> OpenPunterAccountAsync(Guid accountId, string currency)
+    {
+        await connection.ExecuteAsync(Sql.Get("Wallet.OpenPunterAccount"), new { AccountId = accountId, Currency = currency, Now = time.GetUtcNow() }, transaction);
+        return (await LockAccountAsync(accountId))!;
+    }
+
     public async Task SaveAsync(Posting posting, StoredPosting record, IReadOnlyList<Account> changedAccounts, Reservation? reservation, bool isNewReservation)
     {
         var now = time.GetUtcNow();
+        try
+        {
+            await connection.ExecuteAsync(Sql.Get("Wallet.InsertPosting"), new
+            {
+                posting.PostingId, Kind = (byte)posting.Kind, posting.IdempotencyKey, record.AccountId, record.Amount, record.ReservationId, posting.Reference, PostedAt = now,
+            }, transaction);
+        }
+        catch (SqlException ex) when (ex.Number is 2627 or 2601)
+        {
+            throw new DuplicateIdempotencyKeyException(posting.IdempotencyKey, ex);
+        }
+
         if (reservation is not null && isNewReservation)
         {
             await connection.ExecuteAsync(Sql.Get("Wallet.InsertReservation"), new
@@ -37,10 +55,6 @@ internal sealed class SqlWalletTransaction(SqlConnection connection, SqlTransact
             await connection.ExecuteAsync(Sql.Get("Wallet.UpdateReservation"), new { reservation.ReservationId, State = (byte)reservation.State, Now = now }, transaction);
         }
 
-        await connection.ExecuteAsync(Sql.Get("Wallet.InsertPosting"), new
-        {
-            posting.PostingId, Kind = (byte)posting.Kind, posting.IdempotencyKey, record.AccountId, record.Amount, record.ReservationId, posting.Reference, PostedAt = now,
-        }, transaction);
         await connection.ExecuteAsync(Sql.Get("Wallet.InsertEntry"), posting.Entries.Select(e => new { posting.PostingId, e.AccountId, Bucket = (byte)e.Bucket, e.Amount }), transaction);
         await connection.ExecuteAsync(Sql.Get("Wallet.UpdateAccount"), changedAccounts.Select(a => new { a.AccountId, a.Available, a.Reserved }), transaction);
     }

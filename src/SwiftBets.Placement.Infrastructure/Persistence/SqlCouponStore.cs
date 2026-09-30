@@ -79,13 +79,6 @@ public sealed class SqlCouponStore(ISqlConnectionFactory connections, IOutbox ou
         await connection.ExecuteAsync(Sql.Get("Saga.MarkCompensated"), new { CouponId = couponId, ResponseStatus = responseStatus, ResponseJson = responseJson, Now = time.GetUtcNow() });
     }
 
-    public async Task<IReadOnlyDictionary<string, long>> FixtureLiabilityAsync(IReadOnlyList<string> fixtureIds, CancellationToken cancellationToken)
-    {
-        await using var connection = await connections.OpenAsync(cancellationToken);
-        var rows = await connection.QueryAsync<(string FixtureId, long Liability)>(new CommandDefinition(Sql.Get("Coupon.FixtureLiability"), new { FixtureIds = fixtureIds }, cancellationToken: cancellationToken));
-        return rows.ToDictionary(r => r.FixtureId, r => r.Liability, StringComparer.Ordinal);
-    }
-
     public async Task<IReadOnlyList<SagaIntent>> ClaimExpiredAsync(DateTimeOffset now, int batchSize, TimeSpan lease, CancellationToken cancellationToken)
     {
         await using var connection = await connections.OpenAsync(cancellationToken);

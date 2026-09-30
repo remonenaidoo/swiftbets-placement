@@ -9,14 +9,14 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
     <PackageVersion Include="NetArchTest.Rules" Version="1.3.2" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
-    <PackageVersion Include="SwiftBets.BuildingBlocks.Core" Version="0.2.2" />
-    <PackageVersion Include="SwiftBets.BuildingBlocks.Messaging" Version="0.2.2" />
-    <PackageVersion Include="SwiftBets.BuildingBlocks.Observability" Version="0.2.2" />
-    <PackageVersion Include="SwiftBets.BuildingBlocks.Outbox" Version="0.2.2" />
-    <PackageVersion Include="SwiftBets.BuildingBlocks.Persistence" Version="0.2.2" />
-    <PackageVersion Include="SwiftBets.BuildingBlocks.Redis" Version="0.2.2" />
-    <PackageVersion Include="SwiftBets.BuildingBlocks.Testing" Version="0.2.2" />
-    <PackageVersion Include="SwiftBets.BuildingBlocks.Web" Version="0.2.2" />
+    <PackageVersion Include="SwiftBets.BuildingBlocks.Core" Version="0.2.4" />
+    <PackageVersion Include="SwiftBets.BuildingBlocks.Messaging" Version="0.2.4" />
+    <PackageVersion Include="SwiftBets.BuildingBlocks.Observability" Version="0.2.4" />
+    <PackageVersion Include="SwiftBets.BuildingBlocks.Outbox" Version="0.2.4" />
+    <PackageVersion Include="SwiftBets.BuildingBlocks.Persistence" Version="0.2.4" />
+    <PackageVersion Include="SwiftBets.BuildingBlocks.Redis" Version="0.2.4" />
+    <PackageVersion Include="SwiftBets.BuildingBlocks.Testing" Version="0.2.4" />
+    <PackageVersion Include="SwiftBets.BuildingBlocks.Web" Version="0.2.4" />
     <PackageVersion Include="SwiftBets.Contracts" Version="0.2.0" />
     <PackageVersion Include="xunit.v3" Version="4.0.1" />
     <PackageVersion Include="Grpc.AspNetCore" Version="2.84.0" />
@@ -28,7 +28,7 @@
     <PackageVersion Include="Microsoft.Extensions.Identity.Core" Version="10.0.12" />
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.23.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.12" />
-    <PackageVersion Include="SwiftBets.BuildingBlocks.Resilience" Version="0.2.2" />
+    <PackageVersion Include="SwiftBets.BuildingBlocks.Resilience" Version="0.2.4" />
     <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.10.0" />
   </ItemGroup>
 </Project>

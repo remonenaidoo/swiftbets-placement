@@ -8,8 +8,9 @@ public sealed class TransferHandler(PostingRunner runner)
     public Task<WalletOutcome> CreditAsync(string idempotencyKey, Guid accountId, long amount, string currency, string reference) =>
         MoveAsync(PostingKind.Credit, WellKnownAccounts.House, idempotencyKey, accountId, amount, currency, reference);
 
+    /// <summary>A top-up is also how a punter account is opened.</summary>
     public Task<WalletOutcome> TopUpAsync(string idempotencyKey, Guid accountId, long amount, string currency, string reference) =>
-        MoveAsync(PostingKind.TopUp, WellKnownAccounts.Funding, idempotencyKey, accountId, amount, currency, reference);
+        MoveAsync(PostingKind.TopUp, WellKnownAccounts.Funding, idempotencyKey, accountId, amount, currency, reference, openIfMissing: true);
 
     public Task<WalletOutcome> DebitAsync(string idempotencyKey, Guid accountId, long amount, string currency, string reference) =>
         runner.RunAsync(idempotencyKey, PostingKind.Debit, accountId, amount, async transaction =>
@@ -26,10 +27,11 @@ public sealed class TransferHandler(PostingRunner runner)
                     [new(accountId, Bucket.Available, -amount), new(WellKnownAccounts.House, Bucket.Available, amount)]), [account], null, false);
         });
 
-    private Task<WalletOutcome> MoveAsync(PostingKind kind, Guid source, string idempotencyKey, Guid accountId, long amount, string currency, string reference) =>
+    private Task<WalletOutcome> MoveAsync(PostingKind kind, Guid source, string idempotencyKey, Guid accountId, long amount, string currency, string reference, bool openIfMissing = false) =>
         runner.RunAsync(idempotencyKey, kind, accountId, amount, async transaction =>
         {
-            var account = await transaction.LockAccountAsync(accountId);
+            var account = await transaction.LockAccountAsync(accountId)
+                ?? (openIfMissing ? await transaction.OpenPunterAccountAsync(accountId, currency) : null);
             if (account is null)
             {
                 return (WalletFailure.AccountNotFound, null, [], null, false);

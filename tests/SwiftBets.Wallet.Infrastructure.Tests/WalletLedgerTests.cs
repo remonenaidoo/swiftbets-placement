@@ -43,6 +43,29 @@ public sealed class WalletLedgerTests(SqlServerFixture sql)
         await AssertLedgerMatchesBalancesAsync(connectionString);
     }
 
+    [Fact]
+    public async Task Top_up_opens_a_new_punter_account()
+    {
+        var (store, connectionString) = await WalletAsync();
+        var newcomer = Guid.NewGuid();
+
+        var outcome = await new TransferHandler(new PostingRunner(store)).TopUpAsync("topup-1", newcomer, 5_000, "ZAR", "welcome");
+
+        outcome.WasApplied.ShouldBeTrue();
+        (await store.GetAccountAsync(newcomer, CancellationToken.None))!.Available.ShouldBe(5_000);
+        await AssertLedgerMatchesBalancesAsync(connectionString);
+    }
+
+    [Fact]
+    public async Task Credit_to_an_unknown_account_is_refused()
+    {
+        var (store, _) = await WalletAsync();
+
+        var outcome = await new TransferHandler(new PostingRunner(store)).CreditAsync("win-1", Guid.NewGuid(), 5_000, "ZAR", "coupon");
+
+        outcome.Failure.ShouldBe(WalletFailure.AccountNotFound);
+    }
+
     private async Task<(SqlWalletStore Store, string ConnectionString)> WalletAsync()
     {
         var connectionString = await sql.CreateDatabaseAsync("wallet_" + Guid.NewGuid().ToString("N")[..10]);
