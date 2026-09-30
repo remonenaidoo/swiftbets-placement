@@ -1,0 +1,5 @@
+IF SCHEMA_ID(N'placement') IS NULL EXEC (N'CREATE SCHEMA placement');
+IF DATABASE_PRINCIPAL_ID(N'swiftbets_app') IS NULL EXEC (N'CREATE ROLE swiftbets_app');
+GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::placement TO swiftbets_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::inbox TO swiftbets_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::outbox TO swiftbets_app;
