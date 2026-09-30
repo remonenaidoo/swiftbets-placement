@@ -4,6 +4,8 @@ using SwiftBets.BuildingBlocks.Core;
 using SwiftBets.BuildingBlocks.Messaging;
 using SwiftBets.BuildingBlocks.Outbox;
 using SwiftBets.BuildingBlocks.Persistence;
+using SwiftBets.Wallet.Application.Ports;
+using SwiftBets.Wallet.Infrastructure.Persistence;
 
 namespace SwiftBets.Wallet.Infrastructure;
 
@@ -15,6 +17,7 @@ public static class InfrastructureRegistration
         services.AddKafkaMessaging(configuration);
         services.AddSqlServerOutbox(configuration);
         services.AddFaultInjection(configuration);
+        services.AddSingleton<IWalletStore, SqlWalletStore>();
         return services;
     }
 

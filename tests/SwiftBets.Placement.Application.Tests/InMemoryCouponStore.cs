@@ -1,0 +1,72 @@
+using SwiftBets.Contracts.Placement;
+using SwiftBets.Placement.Application.Ports;
+using SwiftBets.Placement.Domain.Sagas;
+
+namespace SwiftBets.Placement.Application.Tests;
+
+internal sealed class InMemoryCouponStore : ICouponStore
+{
+    public Dictionary<Guid, SagaIntent> Intents { get; } = [];
+
+    public List<PlacedCoupon> Coupons { get; } = [];
+
+    public Task<SagaIntent?> TryStartAsync(SagaIntent intent)
+    {
+        var existing = Intents.Values.FirstOrDefault(i => i.PunterId == intent.PunterId && i.IdempotencyKey == intent.IdempotencyKey);
+        if (existing is null)
+        {
+            Intents[intent.CouponId] = intent;
+        }
+
+        return Task.FromResult(existing);
+    }
+
+    public Task<bool> TryMarkReservedAsync(Guid couponId, Guid reservationId) => Transition(couponId, SagaState.Started, i => i with { State = SagaState.Reserved, ReservationId = reservationId });
+
+    public Task MarkRejectedAsync(Guid couponId, int responseStatus, string responseJson, CouponRejectedV1 rejected) =>
+        Transition(couponId, SagaState.Started, i => i with { State = SagaState.Rejected, ResponseStatus = responseStatus, ResponseJson = responseJson });
+
+    public async Task<bool> TryPersistAsync(PlacedCoupon coupon, int responseStatus, string responseJson, CouponPlacedV1 placed)
+    {
+        var ok = await Transition(coupon.CouponId, SagaState.Reserved, i => i with { State = SagaState.Persisted, ResponseStatus = responseStatus, ResponseJson = responseJson });
+        if (ok)
+        {
+            Coupons.Add(coupon);
+        }
+
+        return ok;
+    }
+
+    public Task MarkCompletedAsync(Guid couponId) => Transition(couponId, SagaState.Persisted, i => i with { State = SagaState.Completed });
+
+    public Task MarkCompensatedAsync(Guid couponId, int responseStatus, string responseJson) =>
+        Transition(couponId, SagaState.Compensating, i => i with { State = SagaState.Compensated, ResponseStatus = responseStatus, ResponseJson = responseJson });
+
+    public Task<IReadOnlyDictionary<string, long>> FixtureLiabilityAsync(IReadOnlyList<string> fixtureIds, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyDictionary<string, long>>(new Dictionary<string, long>());
+
+    public Task<IReadOnlyList<SagaIntent>> ClaimExpiredAsync(DateTimeOffset now, int batchSize, TimeSpan lease, CancellationToken cancellationToken)
+    {
+        var due = Intents.Values.Where(i => i.State is SagaState.Started or SagaState.Reserved or SagaState.Persisted or SagaState.Compensating && i.DeadlineAt < now).ToList();
+        foreach (var intent in due.Where(i => i.State is SagaState.Started or SagaState.Reserved))
+        {
+            Intents[intent.CouponId] = intent with { State = SagaState.Compensating };
+        }
+
+        return Task.FromResult<IReadOnlyList<SagaIntent>>([.. due.Select(i => Intents[i.CouponId])]);
+    }
+
+    public Task<PlacedCoupon?> GetCouponAsync(Guid couponId, CancellationToken cancellationToken) =>
+        Task.FromResult(Coupons.FirstOrDefault(c => c.CouponId == couponId));
+
+    private Task<bool> Transition(Guid couponId, SagaState expected, Func<SagaIntent, SagaIntent> change)
+    {
+        if (Intents[couponId].State != expected)
+        {
+            return Task.FromResult(false);
+        }
+
+        Intents[couponId] = change(Intents[couponId]);
+        return Task.FromResult(true);
+    }
+}

@@ -13,10 +13,16 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/SwiftBets.Placement.Api.Tests/SwiftBets.Placement.Api.Tests.csproj" />
+    <Project Path="tests/SwiftBets.Placement.Application.Tests/SwiftBets.Placement.Application.Tests.csproj" />
     <Project Path="tests/SwiftBets.Placement.ArchitectureTests/SwiftBets.Placement.ArchitectureTests.csproj" />
+    <Project Path="tests/SwiftBets.Placement.Domain.Tests/SwiftBets.Placement.Domain.Tests.csproj" />
+    <Project Path="tests/SwiftBets.Placement.Infrastructure.Tests/SwiftBets.Placement.Infrastructure.Tests.csproj" />
     <Project Path="tests/SwiftBets.Placement.Migrator.Tests/SwiftBets.Placement.Migrator.Tests.csproj" />
+    <Project Path="tests/SwiftBets.Placement.TestDoubles/SwiftBets.Placement.TestDoubles.csproj" />
     <Project Path="tests/SwiftBets.Wallet.Api.Tests/SwiftBets.Wallet.Api.Tests.csproj" />
     <Project Path="tests/SwiftBets.Wallet.ArchitectureTests/SwiftBets.Wallet.ArchitectureTests.csproj" />
+    <Project Path="tests/SwiftBets.Wallet.Domain.Tests/SwiftBets.Wallet.Domain.Tests.csproj" />
+    <Project Path="tests/SwiftBets.Wallet.Infrastructure.Tests/SwiftBets.Wallet.Infrastructure.Tests.csproj" />
     <Project Path="tests/SwiftBets.Wallet.Migrator.Tests/SwiftBets.Wallet.Migrator.Tests.csproj" />
   </Folder>
 </Solution>

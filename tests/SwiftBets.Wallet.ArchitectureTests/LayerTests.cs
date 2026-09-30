@@ -5,7 +5,7 @@ namespace SwiftBets.Wallet.ArchitectureTests;
 
 public sealed class LayerTests
 {
-    private static readonly Assembly Domain = typeof(SwiftBets.Wallet.Domain.DomainAssembly).Assembly;
+    private static readonly Assembly Domain = typeof(SwiftBets.Wallet.Domain.Account).Assembly;
     private static readonly Assembly Application = typeof(SwiftBets.Wallet.Application.ApplicationRegistration).Assembly;
 
     [Fact]

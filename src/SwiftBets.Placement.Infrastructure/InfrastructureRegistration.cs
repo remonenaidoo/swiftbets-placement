@@ -1,10 +1,21 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using SwiftBets.BuildingBlocks.Core;
 using SwiftBets.BuildingBlocks.Messaging;
 using SwiftBets.BuildingBlocks.Outbox;
 using SwiftBets.BuildingBlocks.Persistence;
 using SwiftBets.BuildingBlocks.Redis;
+using SwiftBets.BuildingBlocks.Resilience;
+using SwiftBets.Placement.Application.Identity;
+using SwiftBets.Placement.Application.Placing;
+using SwiftBets.Placement.Application.Ports;
+using SwiftBets.Placement.Infrastructure.Identity;
+using SwiftBets.Placement.Infrastructure.Offer;
+using SwiftBets.Placement.Infrastructure.Persistence;
+using SwiftBets.Placement.Infrastructure.Wallet;
+using SwiftBets.Placement.Infrastructure.Workers;
+using WalletGrpc = SwiftBets.Contracts.Grpc.Wallet.V1.Wallet;
 
 namespace SwiftBets.Placement.Infrastructure;
 
@@ -17,6 +28,32 @@ public static class InfrastructureRegistration
         services.AddSqlServerOutbox(configuration);
         services.AddSwiftBetsRedis(Required(configuration, "ConnectionStrings:Redis"));
         services.AddFaultInjection(configuration);
+        services.AddValidatedOptions<PlacementOptions>(configuration, PlacementOptions.SectionName);
+        services.AddValidatedOptions<Application.Identity.IdentityOptions>(configuration, Application.Identity.IdentityOptions.SectionName);
+        services.AddValidatedOptions<WalletClientOptions>(configuration, WalletClientOptions.SectionName);
+
+        services.AddSingleton<ICouponStore, SqlCouponStore>();
+        services.AddSingleton<IOfferReader, RedisOfferReader>();
+        services.AddSingleton<IIdentityStore, SqlIdentityStore>();
+        services.AddSingleton<ITokenIssuer, RsaTokenIssuer>();
+        services.AddSingleton<Application.Identity.IPasswordHasher, AspNetPasswordHasher>();
+        services.AddSingleton<ServiceTokenCache>();
+        services.AddScoped<IWalletClient, GrpcWalletClient>();
+        services.AddGrpcClient<WalletGrpc.WalletClient>((sp, grpc) => grpc.Address = new Uri(sp.GetRequiredService<IOptions<WalletClientOptions>>().Value.GrpcAddress))
+            .ConfigureChannel(channel =>
+            {
+                channel.ServiceConfig = GrpcResilience.KeyedServiceConfig;
+                channel.UnsafeUseInsecureChannelCallCredentials = true;
+            })
+            .AddCallCredentials((_, metadata, sp) =>
+            {
+                metadata.Add("Authorization", $"Bearer {sp.GetRequiredService<ServiceTokenCache>().Token}");
+                return Task.CompletedTask;
+            })
+            .AddKeyedGrpcResilience();
+
+        services.AddHostedService<DemoUserSeeder>();
+        services.AddHostedService<SagaSweeperWorker>();
         return services;
     }
 

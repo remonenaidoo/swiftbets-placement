@@ -1,6 +1,8 @@
 using System.Net;
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using SwiftBets.BuildingBlocks.Testing;
 
 namespace SwiftBets.Placement.Api.Tests;
 
@@ -36,6 +38,21 @@ public sealed class HostTests : IClassFixture<HostTests.Factory>
     }
 
     [Fact]
+    public async Task Placing_without_an_idempotency_key_is_rejected_before_any_work()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/coupons")
+        {
+            Content = JsonContent.Create(new { stake = 1000, currency = "ZAR", legs = new[] { new { fixtureId = "f", marketId = "m", selectionId = "home", odds = 2.0m, offerVersion = 1 } } }),
+        };
+        request.Headers.Authorization = new("Bearer", TestJwt.Issue(Guid.NewGuid().ToString(), "Punter"));
+
+        using var response = await _client.SendAsync(request, TestContext.Current.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldContain("idempotency_key_required");
+    }
+
+    [Fact]
     public async Task Metrics_are_exposed()
     {
         var body = await _client.GetStringAsync(new Uri("/metrics", UriKind.Relative), TestContext.Current.CancellationToken);
@@ -50,6 +67,10 @@ public sealed class HostTests : IClassFixture<HostTests.Factory>
         builder.UseSetting("ConnectionStrings:SbPlacement", "Server=127.0.0.1,1;Database=x;User Id=x;Password=x;TrustServerCertificate=True;Connect Timeout=1");
         builder.UseSetting("Kafka:BootstrapServers", "127.0.0.1:1");
         builder.UseSetting("ConnectionStrings:Redis", "127.0.0.1:1,connectTimeout=200");
+            builder.UseSetting("Jwt:Authority", TestJwt.Issuer);
+            builder.UseSetting("Identity:Issuer", TestJwt.Issuer);
+            builder.UseSetting("Wallet:GrpcAddress", "http://127.0.0.1:1");
+            builder.ConfigureServices(services => services.UseTestJwt());
         }
     }
 }

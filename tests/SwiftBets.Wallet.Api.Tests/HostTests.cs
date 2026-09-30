@@ -1,6 +1,8 @@
 using System.Net;
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using SwiftBets.BuildingBlocks.Testing;
 
 namespace SwiftBets.Wallet.Api.Tests;
 
@@ -36,6 +38,17 @@ public sealed class HostTests : IClassFixture<HostTests.Factory>
     }
 
     [Fact]
+    public async Task Top_up_requires_an_operator()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/accounts/{Guid.NewGuid()}/topup") { Content = JsonContent.Create(new { minorUnits = 100, currency = "ZAR" }) };
+        request.Headers.Authorization = new("Bearer", TestJwt.Issue("punter-1", "Punter"));
+
+        using var response = await _client.SendAsync(request, TestContext.Current.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Metrics_are_exposed()
     {
         var body = await _client.GetStringAsync(new Uri("/metrics", UriKind.Relative), TestContext.Current.CancellationToken);
@@ -49,6 +62,8 @@ public sealed class HostTests : IClassFixture<HostTests.Factory>
         {
         builder.UseSetting("ConnectionStrings:SbWallet", "Server=127.0.0.1,1;Database=x;User Id=x;Password=x;TrustServerCertificate=True;Connect Timeout=1");
         builder.UseSetting("Kafka:BootstrapServers", "127.0.0.1:1");
+            builder.UseSetting("Jwt:Authority", TestJwt.Issuer);
+            builder.ConfigureServices(services => services.UseTestJwt());
         }
     }
 }

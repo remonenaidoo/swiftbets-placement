@@ -4,6 +4,7 @@
   <ItemGroup>
     <PackageReference Include="SwiftBets.BuildingBlocks.Observability" />
     <PackageReference Include="SwiftBets.BuildingBlocks.Web" />
+    <PackageReference Include="FluentValidation" />
     <ProjectReference Include="../SwiftBets.Placement.Infrastructure/SwiftBets.Placement.Infrastructure.csproj" />
   </ItemGroup>
 </Project>
