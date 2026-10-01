@@ -7,6 +7,7 @@ using SwiftBets.BuildingBlocks.Outbox;
 using SwiftBets.BuildingBlocks.Persistence;
 using SwiftBets.BuildingBlocks.Redis;
 using SwiftBets.BuildingBlocks.Resilience;
+using SwiftBets.BuildingBlocks.Web;
 using SwiftBets.Placement.Application.Identity;
 using SwiftBets.Placement.Application.Placing;
 using SwiftBets.Placement.Application.Ports;
@@ -51,12 +52,20 @@ public static class InfrastructureRegistration
                 channel.ServiceConfig = GrpcResilience.KeyedServiceConfig;
                 channel.UnsafeUseInsecureChannelCallCredentials = true;
             })
-            .AddCallCredentials((_, metadata, sp) =>
+            .AddCallCredentials(async (context, metadata, sp) =>
             {
-                metadata.Add("Authorization", $"Bearer {sp.GetRequiredService<ServiceTokenCache>().Token}");
-                return Task.CompletedTask;
+                // Identity issues the wallet token when placement has client credentials; the local token is for tests.
+                var token = sp.GetService<ClientCredentialsTokenProvider>() is { } provider
+                    ? await provider.GetTokenAsync(context.CancellationToken)
+                    : sp.GetRequiredService<ServiceTokenCache>().Token;
+                metadata.Add("Authorization", $"Bearer {token}");
             })
             .AddKeyedGrpcResilience();
+
+        if (configuration.GetSection(ClientCredentialsOptions.SectionName).Exists())
+        {
+            services.AddClientCredentials(configuration);
+        }
 
         services.AddHostedService<DemoUserSeeder>();
         services.AddHostedService<SagaSweeperWorker>();
