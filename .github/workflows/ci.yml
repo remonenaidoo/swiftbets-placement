@@ -14,10 +14,10 @@ jobs:
   dotnet:
     uses: remonenaidoo/swiftbets-platform/.github/workflows/dotnet.yml@main
     with:
-      images: '[{"name": "swiftbets-placement", "dockerfile": "deploy/SwiftBets.Placement.Api.Dockerfile"}, {"name": "swiftbets-placement-migrator", "dockerfile": "deploy/SwiftBets.Placement.Migrator.Dockerfile"}, {"name": "swiftbets-wallet", "dockerfile": "deploy/SwiftBets.Wallet.Api.Dockerfile"}, {"name": "swiftbets-wallet-migrator", "dockerfile": "deploy/SwiftBets.Wallet.Migrator.Dockerfile"}, {"name": "swiftbets-history-migrator", "dockerfile": "deploy/SwiftBets.History.Migrator.Dockerfile"}, {"name": "swiftbets-identity", "dockerfile": "deploy/SwiftBets.Identity.Api.Dockerfile"}, {"name": "swiftbets-identity-migrator", "dockerfile": "deploy/SwiftBets.Identity.Migrator.Dockerfile"}]'
+      images: '[{"name": "swiftbets-placement", "dockerfile": "deploy/SwiftBets.Placement.Api.Dockerfile"}, {"name": "swiftbets-placement-migrator", "dockerfile": "deploy/SwiftBets.Placement.Migrator.Dockerfile"}, {"name": "swiftbets-history-migrator", "dockerfile": "deploy/SwiftBets.History.Migrator.Dockerfile"}]'
       coverage: true
       # Branch floors on money-path code (D103): a few points under what is measured, raised as tests grow.
-      coverage-floors: '{"SwiftBets.Wallet.Domain": {"branch": 70}, "SwiftBets.Wallet.Application": {"branch": 70}, "SwiftBets.Placement.Domain": {"branch": 70}, "SwiftBets.Placement.Application": {"branch": 55}, "SwiftBets.Identity.Domain": {"branch": 90}, "SwiftBets.Identity.Application": {"branch": 80}}'
+      coverage-floors: '{"SwiftBets.Placement.Domain": {"branch": 70}, "SwiftBets.Placement.Application": {"branch": 55}}'
     permissions:
       contents: read
       packages: write

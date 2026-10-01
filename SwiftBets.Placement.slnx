@@ -3,28 +3,14 @@
     <Project Path="src/SwiftBets.History.Application/SwiftBets.History.Application.csproj" />
     <Project Path="src/SwiftBets.History.Infrastructure/SwiftBets.History.Infrastructure.csproj" />
     <Project Path="src/SwiftBets.History.Migrator/SwiftBets.History.Migrator.csproj" />
-    <Project Path="src/SwiftBets.Identity.Api/SwiftBets.Identity.Api.csproj" />
-    <Project Path="src/SwiftBets.Identity.Application/SwiftBets.Identity.Application.csproj" />
-    <Project Path="src/SwiftBets.Identity.Domain/SwiftBets.Identity.Domain.csproj" />
-    <Project Path="src/SwiftBets.Identity.Infrastructure/SwiftBets.Identity.Infrastructure.csproj" />
-    <Project Path="src/SwiftBets.Identity.Migrator/SwiftBets.Identity.Migrator.csproj" />
     <Project Path="src/SwiftBets.Placement.Api/SwiftBets.Placement.Api.csproj" />
     <Project Path="src/SwiftBets.Placement.Application/SwiftBets.Placement.Application.csproj" />
     <Project Path="src/SwiftBets.Placement.Domain/SwiftBets.Placement.Domain.csproj" />
     <Project Path="src/SwiftBets.Placement.Infrastructure/SwiftBets.Placement.Infrastructure.csproj" />
     <Project Path="src/SwiftBets.Placement.Migrator/SwiftBets.Placement.Migrator.csproj" />
-    <Project Path="src/SwiftBets.Wallet.Api/SwiftBets.Wallet.Api.csproj" />
-    <Project Path="src/SwiftBets.Wallet.Application/SwiftBets.Wallet.Application.csproj" />
-    <Project Path="src/SwiftBets.Wallet.Domain/SwiftBets.Wallet.Domain.csproj" />
-    <Project Path="src/SwiftBets.Wallet.Infrastructure/SwiftBets.Wallet.Infrastructure.csproj" />
-    <Project Path="src/SwiftBets.Wallet.Migrator/SwiftBets.Wallet.Migrator.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/SwiftBets.History.Infrastructure.Tests/SwiftBets.History.Infrastructure.Tests.csproj" />
-    <Project Path="tests/SwiftBets.Identity.Api.Tests/SwiftBets.Identity.Api.Tests.csproj" />
-    <Project Path="tests/SwiftBets.Identity.ArchitectureTests/SwiftBets.Identity.ArchitectureTests.csproj" />
-    <Project Path="tests/SwiftBets.Identity.Domain.Tests/SwiftBets.Identity.Domain.Tests.csproj" />
-    <Project Path="tests/SwiftBets.Identity.Infrastructure.Tests/SwiftBets.Identity.Infrastructure.Tests.csproj" />
     <Project Path="tests/SwiftBets.Placement.Api.Tests/SwiftBets.Placement.Api.Tests.csproj" />
     <Project Path="tests/SwiftBets.Placement.Application.Tests/SwiftBets.Placement.Application.Tests.csproj" />
     <Project Path="tests/SwiftBets.Placement.ArchitectureTests/SwiftBets.Placement.ArchitectureTests.csproj" />
@@ -32,10 +18,5 @@
     <Project Path="tests/SwiftBets.Placement.Infrastructure.Tests/SwiftBets.Placement.Infrastructure.Tests.csproj" />
     <Project Path="tests/SwiftBets.Placement.Migrator.Tests/SwiftBets.Placement.Migrator.Tests.csproj" />
     <Project Path="tests/SwiftBets.Placement.TestDoubles/SwiftBets.Placement.TestDoubles.csproj" />
-    <Project Path="tests/SwiftBets.Wallet.Api.Tests/SwiftBets.Wallet.Api.Tests.csproj" />
-    <Project Path="tests/SwiftBets.Wallet.ArchitectureTests/SwiftBets.Wallet.ArchitectureTests.csproj" />
-    <Project Path="tests/SwiftBets.Wallet.Domain.Tests/SwiftBets.Wallet.Domain.Tests.csproj" />
-    <Project Path="tests/SwiftBets.Wallet.Infrastructure.Tests/SwiftBets.Wallet.Infrastructure.Tests.csproj" />
-    <Project Path="tests/SwiftBets.Wallet.Migrator.Tests/SwiftBets.Wallet.Migrator.Tests.csproj" />
   </Folder>
 </Solution>

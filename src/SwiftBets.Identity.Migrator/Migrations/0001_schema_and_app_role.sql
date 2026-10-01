@@ -1,3 +1,0 @@
-IF SCHEMA_ID(N'accounts') IS NULL EXEC (N'CREATE SCHEMA accounts');
-IF DATABASE_PRINCIPAL_ID(N'swiftbets_app') IS NULL EXEC (N'CREATE ROLE swiftbets_app');
-GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::accounts TO swiftbets_app;
