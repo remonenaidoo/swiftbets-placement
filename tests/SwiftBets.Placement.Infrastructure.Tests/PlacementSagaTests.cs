@@ -53,7 +53,9 @@ public sealed class PlacementSagaTests(SqlServerFixture sql)
         results.ShouldAllBe(r => r.Status == 201 || (r.Status == 409 && r.Body.Contains("placement_in_progress")));
         await using var connection = new SqlConnection(connectionString);
         (await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM placement.Coupons")).ShouldBe(1);
-        (await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM outbox.Messages WHERE EventType = 'placement.coupon-placed'")).ShouldBe(1);
+        // One coupon, dual-published: once on the V1 topic and once on the V2 topic.
+        (await connection.ExecuteScalarAsync<int>("SELECT COUNT(DISTINCT Topic) FROM outbox.Messages WHERE EventType = 'placement.coupon-placed'")).ShouldBe(2);
+        (await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM outbox.Messages WHERE EventType = 'placement.coupon-placed'")).ShouldBe(2);
     }
 
     private static PlaceCouponCommand Command(string key) => new(Punter, key, 2_500, "ZAR", [new LegSelection("fx-1", "fx-1-1x2", "home", 2.00m, 3)]);

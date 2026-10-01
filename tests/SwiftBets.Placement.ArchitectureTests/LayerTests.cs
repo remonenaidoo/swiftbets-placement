@@ -19,6 +19,6 @@ public sealed class LayerTests
             .GetResult().IsSuccessful.ShouldBeTrue();
 
     [Fact]
-    public void Domain_assembly_references_no_other_project() =>
-        Domain.GetReferencedAssemblies().Select(a => a.Name).ShouldNotContain(n => n!.StartsWith("SwiftBets.", StringComparison.Ordinal));
+    public void Domain_assembly_references_no_other_project_only_the_shared_contracts() =>
+        Domain.GetReferencedAssemblies().Select(a => a.Name).ShouldNotContain(n => n!.StartsWith("SwiftBets.", StringComparison.Ordinal) && n != "SwiftBets.Contracts");
 }

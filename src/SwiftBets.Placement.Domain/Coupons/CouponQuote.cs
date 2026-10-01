@@ -45,7 +45,7 @@ public static class CouponQuote
                 continue;
             }
 
-            legs.Add(new AcceptedLeg(Guid.CreateVersion7(), price.FixtureId, price.MarketId, price.SelectionId, price.Odds, price.OfferVersion));
+            legs.Add(new AcceptedLeg(Guid.CreateVersion7(), price.FixtureId, price.MarketId, price.SelectionId, price.Odds, price.OfferVersion, selection.IsBanker));
         }
 
         if (drifted.Count > 0)
@@ -53,10 +53,12 @@ public static class CouponQuote
             return (null, new("price_changed", "One or more prices moved against the coupon.", drifted));
         }
 
-        return PayoutMath.Payout(stake, PayoutMath.TotalOdds(legs.Select(l => l.Odds))) > limits.MaxPotentialPayout
-            ? (null, new("payout_too_high", $"Potential payout exceeds {limits.MaxPotentialPayout} minor units."))
-            : (legs, null);
+        return (legs, null);
     }
+
+    /// <summary>The refusal for a coupon whose bets together could pay more than the platform allows, or null.</summary>
+    public static PlacementRejection? CheckPayout(long potentialPayout, RiskLimits limits) =>
+        potentialPayout > limits.MaxPotentialPayout ? new("payout_too_high", $"Potential payout exceeds {limits.MaxPotentialPayout} minor units.") : null;
 
     public static string Key(string fixtureId, string marketId, string selectionId) => $"{fixtureId}|{marketId}|{selectionId}";
 }

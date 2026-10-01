@@ -14,5 +14,7 @@ public sealed class ConfigPlacementSettings(ICompactedState<ConfigEntryV1> state
 
     public long? MaxPayout(string currency) => ConfigKeys.ParseMinorUnits(Value(ConfigKeys.MaxPayout(currency)));
 
+    public bool IsEnabled(string flag) => Value(ConfigKeys.Flag(flag)) == "true";
+
     private string? Value(string key) => state.TryGet(key, out var entry) ? entry.Value : null;
 }

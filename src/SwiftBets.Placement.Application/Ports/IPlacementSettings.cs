@@ -9,4 +9,7 @@ public interface IPlacementSettings
     long? MaxStake(string currency);
 
     long? MaxPayout(string currency);
+
+    /// <summary>A feature flag; off unless set to true.</summary>
+    bool IsEnabled(string flag);
 }

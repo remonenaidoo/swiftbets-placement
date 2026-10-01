@@ -28,6 +28,9 @@ public sealed class PlaceCouponHandler(
     public const string FaultAfterReserve = "placement.after-reserve";
     public const string FaultAfterPersist = "placement.after-persist";
 
+    /// <summary>Config flag that opens system bets and bankers, once settlement reads V2 coupons.</summary>
+    public const string SystemBetsFlag = "system-bets";
+
     public async Task<PlacementResult> HandleAsync(PlaceCouponCommand command, CancellationToken cancellationToken)
     {
         var now = time.GetUtcNow();
@@ -60,13 +63,42 @@ public sealed class PlaceCouponHandler(
         }
 
         var accepted = legs!;
-        var totalOdds = PayoutMath.TotalOdds(accepted.Select(l => l.Odds));
-        var payout = PayoutMath.Payout(command.Stake, totalOdds);
+        if (command.Bets is null && accepted.Any(l => l.IsBanker))
+        {
+            return await RejectAsync(command, couponId, "invalid_bets", "Bankers need a system bet such as a Trixie.");
+        }
+
+        var (bets, betRejection) = BetPricing.Price(accepted, command.Bets ?? [BetPricing.Accumulator(accepted.Count, command.Stake)]);
+        if (betRejection is not null)
+        {
+            return await RejectAsync(command, couponId, betRejection.Code, betRejection.Message);
+        }
+
+        var priced = bets!;
+        var isSystem = IsSystem(accepted, priced);
+        if (isSystem && !settings.IsEnabled(SystemBetsFlag))
+        {
+            return await RejectAsync(command, couponId, "system_bets_unavailable", "System bets and bankers are not available yet.");
+        }
+
+        var totalStake = priced.Sum(b => b.Stake);
+        if (totalStake != command.Stake)
+        {
+            return await RejectAsync(command, couponId, "stake_mismatch", $"The bets total {Amount(totalStake, command.Currency)}, not {Amount(command.Stake, command.Currency)}.");
+        }
+
+        var payout = priced.Sum(b => b.PotentialPayout);
+        if (CouponQuote.CheckPayout(payout, RiskLimits.Default) is { } tooHigh)
+        {
+            return await RejectAsync(command, couponId, tooHigh.Code, tooHigh.Message);
+        }
+
         if (settings.MaxPayout(command.Currency) is { } maxPayout && payout > maxPayout)
         {
             return await RejectAsync(command, couponId, "payout_above_limit", $"The most one coupon can pay is {Amount(maxPayout, command.Currency)}; lower the stake.");
         }
 
+        var totalOdds = isSystem ? decimal.Round((decimal)payout / totalStake, 6, MidpointRounding.ToZero) : PayoutMath.TotalOdds(accepted.Select(l => l.Odds));
         var liability = await liabilities.GetAsync([.. accepted.Select(l => l.FixtureId)], cancellationToken);
         if (liability.Any(l => l.Value + payout > RiskLimits.Default.MaxFixtureLiability))
         {
@@ -93,10 +125,10 @@ public sealed class PlaceCouponHandler(
 
         await faults.HitAsync(FaultAfterReserve, CancellationToken.None);
 
-        var coupon = new PlacedCoupon(couponId, command.PunterId, accepted.Count == 1 ? BetType.Single : BetType.Accumulator,
-            command.Stake, command.Currency, totalOdds, payout, accepted, time.GetUtcNow());
+        var coupon = new PlacedCoupon(couponId, command.PunterId, isSystem ? BetType.System : accepted.Count == 1 ? BetType.Single : BetType.Accumulator,
+            command.Stake, command.Currency, totalOdds, payout, accepted, time.GetUtcNow(), priced);
         var body = PlacementResponses.Coupon(coupon);
-        if (!await store.TryPersistAsync(coupon, PlacementResponses.Placed, body, ToEvent(coupon)))
+        if (!await store.TryPersistAsync(coupon, PlacementResponses.Placed, body, isSystem ? null : ToEvent(coupon), ToEventV2(coupon)))
         {
             return await AbandonAsync(couponId, reservationId);
         }
@@ -152,12 +184,27 @@ public sealed class PlaceCouponHandler(
         [.. coupon.Legs.Select(l => new CouponLegV1(l.LegId, l.FixtureId, l.MarketId, l.SelectionId, l.Odds, l.OfferVersion))],
         coupon.PlacedAt);
 
+    private static bool IsSystem(IReadOnlyList<AcceptedLeg> legs, IReadOnlyList<PricedBet> bets) =>
+        legs.Any(l => l.IsBanker) || bets.Count != 1 || bets[0].Lines != 1 || bets[0].Folds[0] != legs.Count;
+
+    private static CouponPlacedV2 ToEventV2(PlacedCoupon coupon) => new(
+        coupon.CouponId,
+        coupon.PunterId,
+        new Money(coupon.Stake, coupon.Currency),
+        new Money(coupon.PotentialPayout, coupon.Currency),
+        [.. coupon.Legs.Select(l => new CouponLegV2(l.LegId, l.FixtureId, l.MarketId, l.SelectionId, l.Odds, l.OfferVersion, l.IsBanker))],
+        [.. coupon.Bets.Select(b => new CouponBetV2(b.BetId, b.Name, b.Folds, b.Lines, new Money(b.UnitStake, coupon.Currency), new Money(b.Stake, coupon.Currency), new Money(b.PotentialPayout, coupon.Currency)))],
+        coupon.PlacedAt);
+
     private static string Amount(long minorUnits, string currency) =>
         string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{currency} {minorUnits / 100m:0.00}");
 
     private static string RequestHash(PlaceCouponCommand command)
     {
-        var canonical = JsonSerializer.Serialize(new { command.Stake, command.Currency, command.Legs });
+        // Coupons without bets or bankers keep the hash they had before V2, so a retry across a deploy still replays.
+        var canonical = command.Bets is null && !command.Legs.Any(l => l.IsBanker)
+            ? JsonSerializer.Serialize(new { command.Stake, command.Currency, Legs = command.Legs.Select(l => new { l.FixtureId, l.MarketId, l.SelectionId, l.RequestedOdds, l.OfferVersion }) })
+            : JsonSerializer.Serialize(new { command.Stake, command.Currency, command.Legs, command.Bets });
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
     }
 }
