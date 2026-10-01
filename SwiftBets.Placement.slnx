@@ -1,8 +1,5 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/SwiftBets.History.Application/SwiftBets.History.Application.csproj" />
-    <Project Path="src/SwiftBets.History.Infrastructure/SwiftBets.History.Infrastructure.csproj" />
-    <Project Path="src/SwiftBets.History.Migrator/SwiftBets.History.Migrator.csproj" />
     <Project Path="src/SwiftBets.Placement.Api/SwiftBets.Placement.Api.csproj" />
     <Project Path="src/SwiftBets.Placement.Application/SwiftBets.Placement.Application.csproj" />
     <Project Path="src/SwiftBets.Placement.Domain/SwiftBets.Placement.Domain.csproj" />
@@ -10,7 +7,6 @@
     <Project Path="src/SwiftBets.Placement.Migrator/SwiftBets.Placement.Migrator.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/SwiftBets.History.Infrastructure.Tests/SwiftBets.History.Infrastructure.Tests.csproj" />
     <Project Path="tests/SwiftBets.Placement.Api.Tests/SwiftBets.Placement.Api.Tests.csproj" />
     <Project Path="tests/SwiftBets.Placement.Application.Tests/SwiftBets.Placement.Application.Tests.csproj" />
     <Project Path="tests/SwiftBets.Placement.ArchitectureTests/SwiftBets.Placement.ArchitectureTests.csproj" />
