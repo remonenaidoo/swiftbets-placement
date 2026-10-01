@@ -89,7 +89,7 @@ public sealed class LedgerReconciliationTests(SqlServerFixture sql)
     {
         var connectionString = await sql.CreateDatabaseAsync("recon_" + Guid.NewGuid().ToString("N")[..10]);
         var entryPoint = typeof(Program).Assembly.EntryPoint!;
-        var result = entryPoint.Invoke(null, [new[] { $"--ConnectionStrings:SbWallet={connectionString}" }]);
+        var result = entryPoint.Invoke(null, [new[] { $"--ConnectionStrings:SbWallet={connectionString}", "--Migrator:SeedDemo=true" }]);
         (result is Task<int> task ? await task : (int)result!).ShouldBe(0);
         var connections = new SqlServerConnectionFactory(connectionString);
         var reconciliation = new SqlReconciliationStore(connections);
