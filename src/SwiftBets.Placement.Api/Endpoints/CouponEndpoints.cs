@@ -49,7 +49,7 @@ public static class CouponEndpoints
         .RequireAuthorization();
 
         endpoints.MapGet("/me/coupons", async (HttpContext context, IHistoryStore history, int? limit, CancellationToken cancellationToken) =>
-            Results.Json(await history.ListAsync(PunterId(context), limit ?? 25, cancellationToken), ContractJson.Options))
+            Results.Json((await history.ListAsync(PunterId(context), limit ?? 25, cancellationToken)).Select(MyCoupon.From), ContractJson.Options))
         .RequireAuthorization(Roles.Punter);
 
         endpoints.MapGet("/me/balance", async (HttpContext context, IWalletClient wallet, CancellationToken cancellationToken) =>
@@ -91,5 +91,16 @@ public static class CouponEndpoints
                 leg.RuleFor(l => l.OfferVersion).GreaterThan(0);
             });
         }
+    }
+
+    /// <summary>A history row for its owner, with the legs as JSON rather than the stored string.</summary>
+    private sealed record MyCoupon(
+        Guid CouponId, string Status, string? BetType, long? Stake, string Currency, decimal? TotalOdds, long? PotentialPayout,
+        System.Text.Json.JsonElement? Legs, DateTime? PlacedAt, int SettlementVersion, long? Payout, long PaidToDate, DateTime UpdatedAt)
+    {
+        public static MyCoupon From(SwiftBets.History.Application.CouponHistoryRow row) => new(
+            row.CouponId, row.Status, row.BetType, row.Stake, row.Currency, row.TotalOdds, row.PotentialPayout,
+            row.LegsJson is { Length: > 0 } legs ? System.Text.Json.JsonDocument.Parse(legs).RootElement.Clone() : null,
+            row.PlacedAt, row.SettlementVersion, row.Payout, row.PaidToDate, row.UpdatedAt);
     }
 }
