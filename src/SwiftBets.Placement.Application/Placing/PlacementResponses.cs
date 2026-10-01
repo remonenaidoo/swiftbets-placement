@@ -20,7 +20,8 @@ public static class PlacementResponses
         stake = new { minorUnits = coupon.Stake, currency = coupon.Currency },
         coupon.TotalOdds,
         potentialPayout = new { minorUnits = coupon.PotentialPayout, currency = coupon.Currency },
-        legs = coupon.Legs.Select(l => new { l.LegId, l.FixtureId, l.MarketId, l.SelectionId, l.Odds, l.OfferVersion }),
+        legs = coupon.Legs.Select(l => new { l.LegId, l.FixtureId, l.MarketId, l.SelectionId, l.Odds, l.OfferVersion, banker = l.IsBanker }),
+        bets = coupon.Bets.Select(b => new { b.BetId, b.Name, b.Folds, b.Lines, unitStake = b.UnitStake, stake = b.Stake, potentialPayout = b.PotentialPayout }),
         coupon.PlacedAt,
     }, ContractJson.Options);
 

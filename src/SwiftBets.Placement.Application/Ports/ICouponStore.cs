@@ -13,8 +13,11 @@ public interface ICouponStore
     /// <summary>Terminal refusal; the rejection event is written to the outbox in the same transaction.</summary>
     Task MarkRejectedAsync(Guid couponId, int responseStatus, string responseJson, CouponRejectedV1 rejected);
 
-    /// <summary>Coupon, legs, the placed event (outbox) and the Persisted state commit together or not at all.</summary>
-    Task<bool> TryPersistAsync(PlacedCoupon coupon, int responseStatus, string responseJson, CouponPlacedV1 placed);
+    /// <summary>
+    /// Coupon, legs, bets, the placed events (outbox) and the Persisted state commit together or not at all. V1 is null
+    /// for a coupon only V2 can describe.
+    /// </summary>
+    Task<bool> TryPersistAsync(PlacedCoupon coupon, int responseStatus, string responseJson, CouponPlacedV1? placed, CouponPlacedV2 placedV2);
 
     Task MarkCompletedAsync(Guid couponId);
 

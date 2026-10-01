@@ -47,7 +47,7 @@ public sealed class SqlCouponStore(ISqlConnectionFactory connections, IOutbox ou
         await transaction.CommitAsync();
     }
 
-    public async Task<bool> TryPersistAsync(PlacedCoupon coupon, int responseStatus, string responseJson, CouponPlacedV1 placed)
+    public async Task<bool> TryPersistAsync(PlacedCoupon coupon, int responseStatus, string responseJson, CouponPlacedV1? placed, CouponPlacedV2 placedV2)
     {
         await using var connection = await connections.OpenAsync(CancellationToken.None);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync();
@@ -61,8 +61,17 @@ public sealed class SqlCouponStore(ISqlConnectionFactory connections, IOutbox ou
         {
             coupon.CouponId, coupon.PunterId, BetType = (byte)coupon.BetType, coupon.Stake, coupon.Currency, coupon.TotalOdds, coupon.PotentialPayout, coupon.PlacedAt,
         }, transaction);
-        await connection.ExecuteAsync(Sql.Get("Coupon.InsertLeg"), coupon.Legs.Select(l => new { l.LegId, coupon.CouponId, l.FixtureId, l.MarketId, l.SelectionId, l.Odds, l.OfferVersion }), transaction);
-        await outbox.EnqueueAsync(transaction, Topics.CouponPlaced, coupon.CouponId.ToString(), Envelope(placed), CancellationToken.None);
+        await connection.ExecuteAsync(Sql.Get("Coupon.InsertLeg"), coupon.Legs.Select(l => new { l.LegId, coupon.CouponId, l.FixtureId, l.MarketId, l.SelectionId, l.Odds, l.OfferVersion, l.IsBanker }), transaction);
+        await connection.ExecuteAsync(Sql.Get("Coupon.InsertBet"), coupon.Bets.Select(b => new
+        {
+            b.BetId, coupon.CouponId, b.Name, Folds = string.Join(',', b.Folds), b.Lines, b.UnitStake, b.Stake, b.PotentialPayout,
+        }), transaction);
+        if (placed is not null)
+        {
+            await outbox.EnqueueAsync(transaction, Topics.CouponPlaced, coupon.CouponId.ToString(), Envelope(placed), CancellationToken.None);
+        }
+
+        await outbox.EnqueueAsync(transaction, Topics.CouponPlacedV2, coupon.CouponId.ToString(), Envelope(placedV2), CancellationToken.None);
         await transaction.CommitAsync();
         return true;
     }
@@ -97,7 +106,10 @@ public sealed class SqlCouponStore(ISqlConnectionFactory connections, IOutbox ou
         }
 
         var legs = (await reader.ReadAsync<AcceptedLeg>()).ToList();
-        return new PlacedCoupon(c.CouponId, c.PunterId, (BetType)c.BetType, c.Stake, c.Currency, c.TotalOdds, c.PotentialPayout, legs, c.PlacedAt);
+        var bets = (await reader.ReadAsync<(Guid BetId, string Name, string Folds, int Lines, long UnitStake, long Stake, long PotentialPayout)>())
+            .Select(b => new PricedBet(b.BetId, b.Name, [.. b.Folds.Split(',').Select(f => int.Parse(f, System.Globalization.CultureInfo.InvariantCulture))], b.Lines, b.UnitStake, b.Stake, b.PotentialPayout))
+            .ToList();
+        return new PlacedCoupon(c.CouponId, c.PunterId, (BetType)c.BetType, c.Stake, c.Currency, c.TotalOdds, c.PotentialPayout, legs, c.PlacedAt, bets);
     }
 
     private EventEnvelope<T> Envelope<T>(T payload)

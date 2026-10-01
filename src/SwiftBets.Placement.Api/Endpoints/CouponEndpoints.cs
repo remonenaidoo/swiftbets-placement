@@ -1,6 +1,7 @@
 using FluentValidation;
 using SwiftBets.BuildingBlocks.Web;
 using SwiftBets.Contracts.Errors;
+using SwiftBets.Contracts.Placement;
 using SwiftBets.Contracts.Serialization;
 using SwiftBets.History.Application;
 using SwiftBets.Placement.Application.Placing;
@@ -27,7 +28,8 @@ public static class CouponEndpoints
                 key,
                 request.Stake,
                 request.Currency,
-                [.. request.Legs.Select(l => new LegSelection(l.FixtureId, l.MarketId, l.SelectionId, l.Odds, l.OfferVersion))]);
+                [.. request.Legs.Select(l => new LegSelection(l.FixtureId, l.MarketId, l.SelectionId, l.Odds, l.OfferVersion, l.Banker))],
+                request.Bets?.Select(ToBet).ToList());
             var result = await handler.HandleAsync(command, cancellationToken);
             if (result.Replayed)
             {
@@ -70,9 +72,18 @@ public static class CouponEndpoints
     private static Guid PunterId(HttpContext context) =>
         Guid.TryParse(context.User.FindFirst("sub")?.Value, out var id) ? id : throw new BadHttpRequestException("Token subject is not a user id.", 401);
 
-    public sealed record PlaceCouponLeg(string FixtureId, string MarketId, string SelectionId, decimal Odds, long OfferVersion);
+    /// <summary>A named bet (trixie, yankee, ...) needs no folds; otherwise folds are the line sizes over the non-banker legs.</summary>
+    private static BetRequest ToBet(PlaceCouponBet bet) =>
+        bet.Folds is { Count: > 0 } folds
+            ? new BetRequest(bet.Name ?? "system", folds, bet.UnitStake)
+            : new BetRequest(bet.Name!, SystemBets.Named.TryGetValue(bet.Name ?? string.Empty, out var named) ? named.Folds : [], bet.UnitStake);
 
-    public sealed record PlaceCouponRequest(long Stake, string Currency, IReadOnlyList<PlaceCouponLeg> Legs);
+    public sealed record PlaceCouponLeg(string FixtureId, string MarketId, string SelectionId, decimal Odds, long OfferVersion, bool Banker = false);
+
+    public sealed record PlaceCouponBet(string? Name, IReadOnlyList<int>? Folds, long UnitStake);
+
+    /// <summary>Stake is the coupon's total. Without bets the coupon is one single or accumulator over all its legs.</summary>
+    public sealed record PlaceCouponRequest(long Stake, string Currency, IReadOnlyList<PlaceCouponLeg> Legs, IReadOnlyList<PlaceCouponBet>? Bets = null);
 
     public sealed class PlaceCouponRequestValidator : AbstractValidator<PlaceCouponRequest>
     {
@@ -89,6 +100,15 @@ public static class CouponEndpoints
                 leg.RuleFor(l => l.SelectionId).NotEmpty().MaximumLength(50);
                 leg.RuleFor(l => l.Odds).GreaterThanOrEqualTo(1.01m).LessThanOrEqualTo(1000m);
                 leg.RuleFor(l => l.OfferVersion).GreaterThan(0);
+            });
+            RuleFor(r => r.Bets!.Count).InclusiveBetween(1, 10).When(r => r.Bets is not null).WithErrorCode("invalid_bets");
+            RuleForEach(r => r.Bets).ChildRules(bet =>
+            {
+                bet.RuleFor(b => b.UnitStake).GreaterThan(0);
+                bet.RuleFor(b => b.Name).MaximumLength(40);
+                bet.RuleFor(b => b.Name).Must(n => n is not null && SystemBets.Named.ContainsKey(n)).When(b => b.Folds is not { Count: > 0 })
+                    .WithErrorCode("invalid_bets").WithMessage("Name a known bet (trixie, yankee, ...) or give its folds.");
+                bet.RuleFor(b => b.Folds!.Count).LessThanOrEqualTo(20).When(b => b.Folds is not null);
             });
         }
     }

@@ -10,6 +10,10 @@ internal sealed class InMemoryCouponStore : ICouponStore
 
     public List<PlacedCoupon> Coupons { get; } = [];
 
+    public List<CouponPlacedV1?> PlacedV1 { get; } = [];
+
+    public List<CouponPlacedV2> PlacedV2 { get; } = [];
+
     public Task<SagaIntent?> TryStartAsync(SagaIntent intent)
     {
         var existing = Intents.Values.FirstOrDefault(i => i.PunterId == intent.PunterId && i.IdempotencyKey == intent.IdempotencyKey);
@@ -26,12 +30,14 @@ internal sealed class InMemoryCouponStore : ICouponStore
     public Task MarkRejectedAsync(Guid couponId, int responseStatus, string responseJson, CouponRejectedV1 rejected) =>
         Transition(couponId, SagaState.Started, i => i with { State = SagaState.Rejected, ResponseStatus = responseStatus, ResponseJson = responseJson });
 
-    public async Task<bool> TryPersistAsync(PlacedCoupon coupon, int responseStatus, string responseJson, CouponPlacedV1 placed)
+    public async Task<bool> TryPersistAsync(PlacedCoupon coupon, int responseStatus, string responseJson, CouponPlacedV1? placed, CouponPlacedV2 placedV2)
     {
         var ok = await Transition(coupon.CouponId, SagaState.Reserved, i => i with { State = SagaState.Persisted, ResponseStatus = responseStatus, ResponseJson = responseJson });
         if (ok)
         {
             Coupons.Add(coupon);
+            PlacedV1.Add(placed);
+            PlacedV2.Add(placedV2);
         }
 
         return ok;
