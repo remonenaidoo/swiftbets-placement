@@ -20,6 +20,7 @@ public sealed class PlaceCouponHandler(
     ILiabilityLedger liabilities,
     IOfferReader offer,
     IWalletClient wallet,
+    IPlacementSettings settings,
     IFaultPoint faults,
     IOptions<PlacementOptions> options,
     TimeProvider time)
@@ -41,6 +42,16 @@ public sealed class PlaceCouponHandler(
         }
 
         var couponId = intent.CouponId;
+        if (settings.IsStopped)
+        {
+            return await RejectAsync(command, couponId, "placement_suspended", "Betting is paused right now. Try again shortly.");
+        }
+
+        if (settings.MaxStake(command.Currency) is { } maxStake && command.Stake > maxStake)
+        {
+            return await RejectAsync(command, couponId, "stake_above_limit", $"The most you can stake on one coupon is {Amount(maxStake, command.Currency)}.");
+        }
+
         var quotes = await offer.QuoteAsync(command.Legs, cancellationToken);
         var (legs, rejection) = CouponQuote.Evaluate(command.Legs, quotes, command.Stake, RiskLimits.Default);
         if (rejection is not null)
@@ -51,6 +62,11 @@ public sealed class PlaceCouponHandler(
         var accepted = legs!;
         var totalOdds = PayoutMath.TotalOdds(accepted.Select(l => l.Odds));
         var payout = PayoutMath.Payout(command.Stake, totalOdds);
+        if (settings.MaxPayout(command.Currency) is { } maxPayout && payout > maxPayout)
+        {
+            return await RejectAsync(command, couponId, "payout_above_limit", $"The most one coupon can pay is {Amount(maxPayout, command.Currency)}; lower the stake.");
+        }
+
         var liability = await liabilities.GetAsync([.. accepted.Select(l => l.FixtureId)], cancellationToken);
         if (liability.Any(l => l.Value + payout > RiskLimits.Default.MaxFixtureLiability))
         {
@@ -135,6 +151,9 @@ public sealed class PlaceCouponHandler(
         new Money(coupon.PotentialPayout, coupon.Currency),
         [.. coupon.Legs.Select(l => new CouponLegV1(l.LegId, l.FixtureId, l.MarketId, l.SelectionId, l.Odds, l.OfferVersion))],
         coupon.PlacedAt);
+
+    private static string Amount(long minorUnits, string currency) =>
+        string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{currency} {minorUnits / 100m:0.00}");
 
     private static string RequestHash(PlaceCouponCommand command)
     {

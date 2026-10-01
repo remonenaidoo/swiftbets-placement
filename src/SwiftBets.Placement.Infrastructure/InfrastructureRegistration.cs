@@ -10,6 +10,9 @@ using SwiftBets.BuildingBlocks.Resilience;
 using SwiftBets.Placement.Application.Identity;
 using SwiftBets.Placement.Application.Placing;
 using SwiftBets.Placement.Application.Ports;
+using SwiftBets.Contracts.Config;
+using SwiftBets.Contracts.Messaging;
+using SwiftBets.Placement.Infrastructure.Config;
 using SwiftBets.Placement.Infrastructure.Identity;
 using SwiftBets.Placement.Infrastructure.Offer;
 using SwiftBets.Placement.Infrastructure.Persistence;
@@ -26,6 +29,8 @@ public static class InfrastructureRegistration
         services.AddSqlServerPersistence(Required(configuration, "ConnectionStrings:SbPlacement"));
         services.AddKafkaMessaging(configuration);
         services.AddSqlServerOutbox(configuration);
+        services.AddCompactedState<ConfigEntryV1>(Topics.ConfigEntries);
+        services.AddSingleton<IPlacementSettings, ConfigPlacementSettings>();
         services.AddSwiftBetsRedis(Required(configuration, "ConnectionStrings:Redis"));
         services.AddFaultInjection(configuration);
         services.AddValidatedOptions<PlacementOptions>(configuration, PlacementOptions.SectionName);
