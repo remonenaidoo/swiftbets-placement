@@ -33,7 +33,7 @@ public sealed class GrpcWalletClient(WalletGrpc.WalletClient client, IOptions<Wa
             var reply = await client.GetBalanceAsync(new GetBalanceRequest { AccountId = accountId.ToString() }, deadline: deadline, cancellationToken: cancellationToken);
             return reply.OutcomeCase == BalanceReply.OutcomeOneofCase.Balance
                 ? new WalletCall(WalletCallStatus.Succeeded, Available: reply.Balance.Available.MinorUnits)
-                : new WalletCall(WalletCallStatus.Refused, FailureCode: Code(reply.Failure));
+                : new WalletCall(WalletCallStatus.Refused, FailureCode: Code(reply.Failure), FailureDetail: reply.Failure.Message);
         });
 
     private async Task<WalletCall> CallAsync(Func<DateTime, Task<WalletCall>> call)
@@ -80,6 +80,8 @@ public sealed class GrpcWalletClient(WalletGrpc.WalletClient client, IOptions<Wa
         WalletFailureCode.CurrencyMismatch => "currency_mismatch",
         WalletFailureCode.IdempotencyConflict => "idempotency_conflict",
         WalletFailureCode.InvalidState => "invalid_reservation_state",
+        WalletFailureCode.LimitExceeded => "responsible_gambling_limit",
+        WalletFailureCode.AccountRestricted => "account_restricted",
         _ => "wallet_refused",
     };
 }
