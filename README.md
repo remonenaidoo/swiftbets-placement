@@ -7,7 +7,7 @@ Bet placement for SwiftBets: coupon validation, the price-change policy, the ris
 ## Hosts
 
 - `SwiftBets.Placement.Api`: coupon placement, my bets, and the legacy identity module.
-- `SwiftBets.Placement.Migrator`, `SwiftBets.History.Migrator`: one-shot DbUp migrators.
+- `SwiftBets.Placement.Migrator`: one-shot DbUp migrator. Bet history lives in swiftbets-bethistory.
 
 ## Data and events
 

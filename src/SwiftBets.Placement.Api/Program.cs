@@ -1,7 +1,6 @@
 using FluentValidation;
 using SwiftBets.BuildingBlocks.Observability;
 using SwiftBets.BuildingBlocks.Web;
-using SwiftBets.History.Infrastructure;
 using SwiftBets.Placement.Api.Endpoints;
 using SwiftBets.Placement.Application;
 using SwiftBets.Placement.Infrastructure;
@@ -18,7 +17,6 @@ builder.Services.AddSwiftBetsJwtBearer(builder.Configuration);
 builder.Services.AddScoped<IValidator<CouponEndpoints.PlaceCouponRequest>, CouponEndpoints.PlaceCouponRequestValidator>();
 builder.Services.AddPlacementApplication();
 builder.Services.AddPlacementInfrastructure(builder.Configuration);
-builder.Services.AddCouponHistory(builder.Configuration);
 
 var app = builder.Build();
 app.UseSwiftBetsObservability();
