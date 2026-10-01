@@ -24,6 +24,20 @@ public sealed class PostgresHistoryStore(NpgsqlDataSource dataSource) : IHistory
         }, cancellationToken: cancellationToken));
     }
 
+    public async Task ProjectPlacedAsync(CouponPlacedV2 placed, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(placed);
+        var system = placed.Bets.Count != 1 || placed.Bets[0].Lines != 1 || placed.Legs.Any(l => l.IsBanker);
+        var betType = system ? BetType.System : placed.Legs.Count == 1 ? BetType.Single : BetType.Accumulator;
+        var odds = placed.TotalStake.MinorUnits == 0 ? 0m : decimal.Round((decimal)placed.PotentialPayout.MinorUnits / placed.TotalStake.MinorUnits, 6, MidpointRounding.ToZero);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await connection.ExecuteAsync(new CommandDefinition(Sql.Get("History.Placed"), new
+        {
+            placed.CouponId, placed.PunterId, BetType = betType.ToString().ToLowerInvariant(), Stake = placed.TotalStake.MinorUnits, placed.TotalStake.Currency,
+            TotalOdds = odds, PotentialPayout = placed.PotentialPayout.MinorUnits, Legs = JsonSerializer.Serialize(placed.Legs, ContractJson.Options), placed.PlacedAt,
+        }, cancellationToken: cancellationToken));
+    }
+
     public async Task ProjectSettledAsync(CouponSettledV1 settled, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
