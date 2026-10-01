@@ -6,6 +6,7 @@ using SwiftBets.BuildingBlocks.Outbox;
 using SwiftBets.BuildingBlocks.Persistence;
 using SwiftBets.Wallet.Application.Ports;
 using SwiftBets.Wallet.Infrastructure.Persistence;
+using SwiftBets.Wallet.Infrastructure.Workers;
 
 namespace SwiftBets.Wallet.Infrastructure;
 
@@ -18,6 +19,13 @@ public static class InfrastructureRegistration
         services.AddSqlServerOutbox(configuration);
         services.AddFaultInjection(configuration);
         services.AddSingleton<IWalletStore, SqlWalletStore>();
+        services.AddSingleton<IReconciliationStore, SqlReconciliationStore>();
+        services.AddValidatedOptions<ReconciliationOptions>(configuration, ReconciliationOptions.SectionName);
+        if (configuration.GetValue($"{ReconciliationOptions.SectionName}:{nameof(ReconciliationOptions.Enabled)}", true))
+        {
+            services.AddHostedService<LedgerReconciliationWorker>();
+        }
+
         return services;
     }
 
