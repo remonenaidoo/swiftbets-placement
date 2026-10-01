@@ -25,8 +25,69 @@ public sealed class MigratorTests(SqlServerFixture sql)
     }
 
     [Fact]
+    public async Task Reconciliation_migration_rolls_back_and_reapplies()
+    {
+        var connectionString = await sql.CreateDatabaseAsync("mig_" + Guid.NewGuid().ToString("N")[..10]);
+        string[] args = [$"--ConnectionStrings:SbWallet={connectionString}"];
+        (await RunAsync(args)).ShouldBe(0);
+        await using var connection = new SqlConnection(connectionString);
+
+        await connection.ExecuteAsync(Rollback("0004_reconciliation"));
+
+        (await ReconciliationTablesAsync(connection)).ShouldBe(0);
+        (await RunAsync(args)).ShouldBe(0);
+        (await ReconciliationTablesAsync(connection)).ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task Demo_punters_exist_only_when_seeding_is_asked_for()
+    {
+        var connectionString = await sql.CreateDatabaseAsync("mig_" + Guid.NewGuid().ToString("N")[..10]);
+        string[] plain = [$"--ConnectionStrings:SbWallet={connectionString}"];
+        string[] seeded = [.. plain, "--Migrator:SeedDemo=true"];
+        await using var connection = new SqlConnection(connectionString);
+
+        (await RunAsync(plain)).ShouldBe(0);
+        (await PuntersAsync(connection)).ShouldBe(0);
+
+        (await RunAsync(seeded)).ShouldBe(0);
+        (await RunAsync(seeded)).ShouldBe(0);
+        (await PuntersAsync(connection)).ShouldBe(5);
+        (await connection.ExecuteScalarAsync<long>("SELECT SUM(Amount) FROM wallet.LedgerEntries")).ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Removing_the_seed_keeps_demo_punters_that_have_been_used()
+    {
+        var connectionString = await sql.CreateDatabaseAsync("mig_" + Guid.NewGuid().ToString("N")[..10]);
+        string[] seeded = [$"--ConnectionStrings:SbWallet={connectionString}", "--Migrator:SeedDemo=true"];
+        (await RunAsync(seeded)).ShouldBe(0);
+        await using var connection = new SqlConnection(connectionString);
+        await connection.ExecuteAsync("UPDATE wallet.Accounts SET Available = Available - 1 WHERE AccountId = '10000000-0000-0000-0000-000000000001'");
+        await connection.ExecuteAsync("DELETE FROM dbo.SchemaVersions WHERE ScriptName LIKE '%0005_demo_seed_removed.sql'");
+
+        (await RunAsync([$"--ConnectionStrings:SbWallet={connectionString}"])).ShouldBe(0);
+        (await PuntersAsync(connection)).ShouldBe(1);
+
+        await connection.ExecuteAsync(Rollback("0005_demo_seed_removed"));
+        (await PuntersAsync(connection)).ShouldBe(5);
+    }
+
+    [Fact]
     public async Task Missing_connection_string_fails_with_a_usage_code() =>
         (await RunAsync([])).ShouldBe(2);
+
+    private static Task<int> PuntersAsync(SqlConnection connection) =>
+        connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM wallet.Accounts WHERE Kind = 1");
+
+    private static Task<int> ReconciliationTablesAsync(SqlConnection connection) =>
+        connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM sys.tables WHERE schema_id = SCHEMA_ID('wallet') AND name LIKE 'Reconciliation%'");
+
+    private static string Rollback(string migration)
+    {
+        using var stream = typeof(Program).Assembly.GetManifestResourceStream($"SwiftBets.Wallet.Migrator.Rollbacks.{migration}.sql")!;
+        return new StreamReader(stream).ReadToEnd();
+    }
 
     private static async Task<int> RunAsync(string[] args)
     {

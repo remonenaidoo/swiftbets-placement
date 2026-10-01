@@ -1,3 +1,5 @@
+using Dapper;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using SwiftBets.BuildingBlocks.Outbox;
 using SwiftBets.BuildingBlocks.Persistence;
@@ -23,6 +25,13 @@ if (!result.Successful)
 if (configuration["Migrator:AppLogin"] is { Length: > 0 } appLogin)
 {
     await MigrationRunner.GrantSqlServerAppLoginAsync(connectionString, appLogin, CancellationToken.None);
+}
+
+// Demo and local deployments only; production never sets it.
+if (configuration.GetValue("Migrator:SeedDemo", false))
+{
+    await using var connection = new SqlConnection(connectionString);
+    await connection.ExecuteAsync(SqlResources.For<Program>().Get("DemoSeed"));
 }
 
 return 0;

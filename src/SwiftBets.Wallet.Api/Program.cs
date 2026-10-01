@@ -32,6 +32,7 @@ app.UseAuthorization();
 app.MapSwiftBetsOperationalEndpoints();
 app.MapGrpcService<WalletGrpcService>();
 app.MapTopUp();
+app.MapReconciliation();
 app.MapSwiftBetsFaultEndpoints();
 
 await app.RunAsync();

@@ -3,6 +3,11 @@
     <Project Path="src/SwiftBets.History.Application/SwiftBets.History.Application.csproj" />
     <Project Path="src/SwiftBets.History.Infrastructure/SwiftBets.History.Infrastructure.csproj" />
     <Project Path="src/SwiftBets.History.Migrator/SwiftBets.History.Migrator.csproj" />
+    <Project Path="src/SwiftBets.Identity.Api/SwiftBets.Identity.Api.csproj" />
+    <Project Path="src/SwiftBets.Identity.Application/SwiftBets.Identity.Application.csproj" />
+    <Project Path="src/SwiftBets.Identity.Domain/SwiftBets.Identity.Domain.csproj" />
+    <Project Path="src/SwiftBets.Identity.Infrastructure/SwiftBets.Identity.Infrastructure.csproj" />
+    <Project Path="src/SwiftBets.Identity.Migrator/SwiftBets.Identity.Migrator.csproj" />
     <Project Path="src/SwiftBets.Placement.Api/SwiftBets.Placement.Api.csproj" />
     <Project Path="src/SwiftBets.Placement.Application/SwiftBets.Placement.Application.csproj" />
     <Project Path="src/SwiftBets.Placement.Domain/SwiftBets.Placement.Domain.csproj" />
@@ -16,6 +21,10 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/SwiftBets.History.Infrastructure.Tests/SwiftBets.History.Infrastructure.Tests.csproj" />
+    <Project Path="tests/SwiftBets.Identity.Api.Tests/SwiftBets.Identity.Api.Tests.csproj" />
+    <Project Path="tests/SwiftBets.Identity.ArchitectureTests/SwiftBets.Identity.ArchitectureTests.csproj" />
+    <Project Path="tests/SwiftBets.Identity.Domain.Tests/SwiftBets.Identity.Domain.Tests.csproj" />
+    <Project Path="tests/SwiftBets.Identity.Infrastructure.Tests/SwiftBets.Identity.Infrastructure.Tests.csproj" />
     <Project Path="tests/SwiftBets.Placement.Api.Tests/SwiftBets.Placement.Api.Tests.csproj" />
     <Project Path="tests/SwiftBets.Placement.Application.Tests/SwiftBets.Placement.Application.Tests.csproj" />
     <Project Path="tests/SwiftBets.Placement.ArchitectureTests/SwiftBets.Placement.ArchitectureTests.csproj" />
