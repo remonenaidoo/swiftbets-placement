@@ -48,6 +48,12 @@ public static class AccountEndpoints
 
         var admin = endpoints.MapGroup("/admin/users");
 
+        admin.MapGet("/", async (string? email, IUserStore users, HttpContext context, CancellationToken cancellationToken) =>
+            email is { Length: > 0 } && EmailAddress.IsPlausible(email) && await users.FindByLoginAsync(EmailAddress.Normalize(email), cancellationToken) is { } user
+                ? Results.Ok(Profile.From(user))
+                : Error.NotFound("user_not_found", "No account with that email.").ToHttpResult(context))
+            .RequireAuthorization(Permissions.UsersRead);
+
         admin.MapGet("/{userId:guid}", async (Guid userId, IUserStore users, HttpContext context, CancellationToken cancellationToken) =>
             await users.FindByIdAsync(userId, cancellationToken) is { } user
                 ? Results.Ok(Profile.From(user))

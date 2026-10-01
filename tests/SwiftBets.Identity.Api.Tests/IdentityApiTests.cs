@@ -54,6 +54,10 @@ public sealed class IdentityApiTests(SqlServerFixture sql)
         forbidden.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
 
         var operatorToken = await SignInAsync(client, "operator1", IdentityHost.DemoPassword);
+        using var found = await GetAsync(client, "/admin/users?email=RISKY@example.com", operatorToken);
+        (await found.Content.ReadFromJsonAsync<JsonElement>(Cancel)).GetProperty("userId").GetString().ShouldBe(customerId);
+        using var missing = await GetAsync(client, "/admin/users?email=nobody@example.com", operatorToken);
+        missing.StatusCode.ShouldBe(HttpStatusCode.NotFound);
         using var request = new HttpRequestMessage(HttpMethod.Put, $"/admin/users/{customerId}/status") { Content = JsonContent.Create(new { status = "suspended", reason = "chargeback under review" }) };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", operatorToken);
         using var suspended = await client.SendAsync(request, Cancel);
