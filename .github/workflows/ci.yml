@@ -13,7 +13,7 @@ jobs:
   dotnet:
     uses: remonenaidoo/swiftbets-platform/.github/workflows/dotnet.yml@main
     with:
-      images: '[{"name": "swiftbets-placement", "dockerfile": "deploy/SwiftBets.Placement.Api.Dockerfile"}, {"name": "swiftbets-placement-migrator", "dockerfile": "deploy/SwiftBets.Placement.Migrator.Dockerfile"}, {"name": "swiftbets-wallet", "dockerfile": "deploy/SwiftBets.Wallet.Api.Dockerfile"}, {"name": "swiftbets-wallet-migrator", "dockerfile": "deploy/SwiftBets.Wallet.Migrator.Dockerfile"}]'
+      images: '[{"name": "swiftbets-placement", "dockerfile": "deploy/SwiftBets.Placement.Api.Dockerfile"}, {"name": "swiftbets-placement-migrator", "dockerfile": "deploy/SwiftBets.Placement.Migrator.Dockerfile"}, {"name": "swiftbets-wallet", "dockerfile": "deploy/SwiftBets.Wallet.Api.Dockerfile"}, {"name": "swiftbets-wallet-migrator", "dockerfile": "deploy/SwiftBets.Wallet.Migrator.Dockerfile"}, {"name": "swiftbets-history-migrator", "dockerfile": "deploy/SwiftBets.History.Migrator.Dockerfile"}]'
     permissions:
       contents: read
       packages: write
