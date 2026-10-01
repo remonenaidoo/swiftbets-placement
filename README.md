@@ -2,18 +2,17 @@
 
 [![ci](https://github.com/remonenaidoo/swiftbets-placement/actions/workflows/ci.yml/badge.svg)](https://github.com/remonenaidoo/swiftbets-placement/actions/workflows/ci.yml)
 
-Bet placement for SwiftBets: identity (RS256 JWT + JWKS), coupon validation, the price-change policy, the risk module, and the placement saga with durable intents, an orphan sweeper, a transactional outbox and a claiming relay. The wallet ledger lives here as a separate process with its own database and login, reached over gRPC.
+Bet placement for SwiftBets: coupon validation, the price-change policy, the risk module, the placement saga with durable intents, an orphan sweeper, a transactional outbox and a claiming relay, and the bet-history projection. The wallet ([swiftbets-wallet](https://github.com/remonenaidoo/swiftbets-wallet)) is called over gRPC; tokens come from [swiftbets-identity](https://github.com/remonenaidoo/swiftbets-identity). Placement's legacy identity module stays read-only for one release after the cut-over, then goes.
 
 ## Hosts
 
-- `SwiftBets.Placement.Api`: identity and coupon placement.
-- `SwiftBets.Wallet.Api`: double-entry wallet ledger; gRPC `swiftbets.wallet.v1.Wallet` for placement and payout, HTTP only for operator top-up.
-- `SwiftBets.Placement.Migrator`, `SwiftBets.Wallet.Migrator`: one-shot DbUp migrators.
+- `SwiftBets.Placement.Api`: coupon placement, my bets, and the legacy identity module.
+- `SwiftBets.Placement.Migrator`, `SwiftBets.History.Migrator`: one-shot DbUp migrators.
 
 ## Data and events
 
-- **Owns:** SQL Server `SbPlacement` (coupons, legs, saga intents, outbox, inbox) and `SbWallet` (accounts, ledger entries, reservations, idempotency), each with its own least-privilege login.
-- **Events:** Produces `placement.coupon-placed`, `placement.coupon-rejected`, `wallet.ledger-posted`.
+- **Owns:** SQL Server `SbPlacement` (coupons, legs, saga intents, outbox, inbox) and Postgres `sb_history` (the my-bets projection), each with its own least-privilege login.
+- **Events:** Produces `placement.coupon-placed`, `placement.coupon-rejected`.
 
 ## Layout
 
@@ -44,8 +43,7 @@ Multi-arch (amd64 + arm64), non-root, chiseled runtime:
 
 - `ghcr.io/remonenaidoo/swiftbets-placement`
 - `ghcr.io/remonenaidoo/swiftbets-placement-migrator`
-- `ghcr.io/remonenaidoo/swiftbets-wallet`
-- `ghcr.io/remonenaidoo/swiftbets-wallet-migrator`
+- `ghcr.io/remonenaidoo/swiftbets-history-migrator`
 
 ## License
 
