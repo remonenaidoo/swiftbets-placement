@@ -37,6 +37,24 @@ public sealed class HistoryProjectionTests(PostgresFixture postgres)
         (row.Status, row.Payout).ShouldBe(("lost", 0L));
     }
 
+    [Fact]
+    public async Task A_banker_trixie_is_projected_as_a_system_coupon_and_its_v1_twin_changes_nothing()
+    {
+        var store = await StoreAsync();
+        var (placed, _) = Coupon();
+        var zar = (long m) => new Money(m, "ZAR");
+        var v2 = new CouponPlacedV2(placed.CouponId, placed.PunterId, zar(400), zar(9_000),
+            [new CouponLegV2(Guid.NewGuid(), "b", "b-1x2", "home", 1.5m, 1, true), new CouponLegV2(Guid.NewGuid(), "x", "x-1x2", "home", 2m, 1, false),
+             new CouponLegV2(Guid.NewGuid(), "y", "y-1x2", "draw", 3m, 1, false), new CouponLegV2(Guid.NewGuid(), "z", "z-1x2", "away", 4m, 1, false)],
+            [new CouponBetV2(Guid.NewGuid(), "trixie", [2, 3], 4, zar(100), zar(400), zar(9_000))], DateTimeOffset.UtcNow);
+
+        await store.ProjectPlacedAsync(v2, CancellationToken.None);
+        await store.ProjectPlacedAsync(placed, CancellationToken.None);
+
+        var row = (await store.ListAsync(placed.PunterId, 10, CancellationToken.None)).ShouldHaveSingleItem();
+        (row.BetType, row.Stake, row.PotentialPayout, row.TotalOdds).ShouldBe(("system", 400L, 9_000L, 22.5m));
+    }
+
     private static (CouponPlacedV1, CouponSettledV1) Coupon()
     {
         var (couponId, punterId) = (Guid.NewGuid(), Guid.NewGuid());

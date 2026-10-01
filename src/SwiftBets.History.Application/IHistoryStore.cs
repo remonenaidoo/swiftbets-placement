@@ -12,6 +12,9 @@ public interface IHistoryStore
 {
     Task ProjectPlacedAsync(CouponPlacedV1 placed, CancellationToken cancellationToken);
 
+    /// <summary>Every coupon, system bets included; a coupon also seen as V1 is projected once.</summary>
+    Task ProjectPlacedAsync(CouponPlacedV2 placed, CancellationToken cancellationToken);
+
     Task ProjectSettledAsync(CouponSettledV1 settled, CancellationToken cancellationToken);
 
     Task ProjectPaidAsync(PayoutCompletedV1 paid, CancellationToken cancellationToken);
