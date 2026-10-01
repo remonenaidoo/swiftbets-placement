@@ -66,7 +66,7 @@ public sealed class PlaceCouponHandler(
 
         if (reserve.Status == WalletCallStatus.Refused)
         {
-            return await RejectAsync(command, couponId, reserve.FailureCode ?? "wallet_refused", "The wallet refused the stake.");
+            return await RejectAsync(command, couponId, reserve.FailureCode ?? "wallet_refused", WalletRefusalMessages.For(reserve.FailureCode, reserve.FailureDetail, command.Currency));
         }
 
         var reservationId = reserve.ReservationId!.Value;
