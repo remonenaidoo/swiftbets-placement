@@ -144,7 +144,7 @@ public sealed class PlaceCouponHandler(
         var coupon = new PlacedCoupon(couponId, command.PunterId, isSystem ? BetType.System : accepted.Count == 1 ? BetType.Single : BetType.Accumulator,
             command.Stake, command.Currency, totalOdds, payout, accepted, time.GetUtcNow(), priced);
         var body = PlacementResponses.Coupon(coupon);
-        if (!await store.TryPersistAsync(coupon, PlacementResponses.Placed, body, isSystem ? null : ToEvent(coupon), ToEventV2(coupon)))
+        if (!await store.TryPersistAsync(coupon, PlacementResponses.Placed, body, ToEventV2(coupon)))
         {
             return await AbandonAsync(couponId, reservationId);
         }
@@ -189,16 +189,6 @@ public sealed class PlaceCouponHandler(
             : new PlacementResult(PlacementResponses.Conflict,
                 PlacementResponses.Error(existing.CouponId, PlacementResponses.Conflict, "placement_in_progress", "This coupon is still being placed; retry shortly."), true);
     }
-
-    private static CouponPlacedV1 ToEvent(PlacedCoupon coupon) => new(
-        coupon.CouponId,
-        coupon.PunterId,
-        coupon.BetType,
-        new Money(coupon.Stake, coupon.Currency),
-        coupon.TotalOdds,
-        new Money(coupon.PotentialPayout, coupon.Currency),
-        [.. coupon.Legs.Select(l => new CouponLegV1(l.LegId, l.FixtureId, l.MarketId, l.SelectionId, l.Odds, l.OfferVersion))],
-        coupon.PlacedAt);
 
     private static bool IsSystem(IReadOnlyList<AcceptedLeg> legs, IReadOnlyList<PricedBet> bets) =>
         legs.Any(l => l.IsBanker) || bets.Count != 1 || bets[0].Lines != 1 || bets[0].Folds[0] != legs.Count;

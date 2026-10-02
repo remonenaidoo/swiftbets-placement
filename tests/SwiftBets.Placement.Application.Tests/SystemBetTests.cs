@@ -33,7 +33,6 @@ public sealed class SystemBetTests
         coupon.BetType.ShouldBe(BetType.System);
         coupon.Stake.ShouldBe(400);
         coupon.PotentialPayout.ShouldBe(600 + 800 + 1_200 + 2_400);
-        store.PlacedV1.ShouldBe([null]);
         store.PlacedV2.Single().Bets.Single().Folds.ShouldBe([2, 3]);
         wallet.Balance.ShouldBe(100_000 - 400);
     }
@@ -76,15 +75,14 @@ public sealed class SystemBetTests
     }
 
     [Fact]
-    public async Task An_old_style_accumulator_is_published_as_both_versions()
+    public async Task An_old_style_accumulator_is_published_as_a_v2_accumulator()
     {
         var (handler, store, _, _) = Build();
 
         var result = await handler.HandleAsync(new PlaceCouponCommand(Guid.NewGuid(), "key-sys-006", 1_000, "ZAR", [Leg(Prices[0]), Leg(Prices[1])]), CancellationToken.None);
 
         result.Status.ShouldBe(201);
-        store.PlacedV1.Single()!.BetType.ShouldBe(BetType.Accumulator);
-        store.PlacedV1.Single()!.PotentialPayout.MinorUnits.ShouldBe(6_000);
+        store.PlacedV2.Single().PotentialPayout.MinorUnits.ShouldBe(6_000);
         var bet = store.PlacedV2.Single().Bets.Single();
         bet.ShouldSatisfyAllConditions(b => b.Name.ShouldBe("accumulator"), b => b.Folds.ShouldBe([2]), b => b.Lines.ShouldBe(1));
     }
