@@ -10,6 +10,7 @@ public static class ApplicationRegistration
     public static IServiceCollection AddPlacementApplication(this IServiceCollection services)
     {
         services.AddScoped<PlaceCouponHandler>();
+        services.AddScoped<RefreshCouponHandler>();
         services.AddScoped<SweepOrphansHandler>();
         services.AddScoped<TokenHandler>();
         return services;

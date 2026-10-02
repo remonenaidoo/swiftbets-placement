@@ -22,11 +22,13 @@ public sealed class RedisOfferReader(IConnectionMultiplexer redis, TimeProvider 
             var fixture = JsonSerializer.Deserialize<FixtureChangedV1>(json.ToString(), ContractJson.Options)!;
             foreach (var market in fixture.Markets)
             {
-                var tradable = fixture.Status == FixtureStatus.Scheduled && market.Status == MarketStatus.Open && fixture.KickoffAt > now;
+                // Pre-match until kickoff; in play only while the feed keeps the market open (the in-play seam).
+                var live = fixture.Status == FixtureStatus.InPlay;
+                var tradable = market.Status == MarketStatus.Open && (live || (fixture.Status == FixtureStatus.Scheduled && fixture.KickoffAt > now));
                 foreach (var selection in market.Selections)
                 {
                     prices[CouponQuote.Key(fixture.FixtureId, market.MarketId, selection.SelectionId)] =
-                        new QuotedPrice(fixture.FixtureId, market.MarketId, selection.SelectionId, selection.Odds, fixture.OfferVersion, tradable);
+                        new QuotedPrice(fixture.FixtureId, market.MarketId, selection.SelectionId, selection.Odds, fixture.OfferVersion, tradable, live);
                 }
             }
         }
