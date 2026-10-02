@@ -47,7 +47,7 @@ public sealed class SqlCouponStore(ISqlConnectionFactory connections, IOutbox ou
         await transaction.CommitAsync();
     }
 
-    public async Task<bool> TryPersistAsync(PlacedCoupon coupon, int responseStatus, string responseJson, CouponPlacedV1? placed, CouponPlacedV2 placedV2)
+    public async Task<bool> TryPersistAsync(PlacedCoupon coupon, int responseStatus, string responseJson, CouponPlacedV2 placedV2)
     {
         await using var connection = await connections.OpenAsync(CancellationToken.None);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync();
@@ -66,11 +66,6 @@ public sealed class SqlCouponStore(ISqlConnectionFactory connections, IOutbox ou
         {
             b.BetId, coupon.CouponId, b.Name, Folds = string.Join(',', b.Folds), b.Lines, b.UnitStake, b.Stake, b.PotentialPayout,
         }), transaction);
-        if (placed is not null)
-        {
-            await outbox.EnqueueAsync(transaction, Topics.CouponPlaced, coupon.CouponId.ToString(), Envelope(placed), CancellationToken.None);
-        }
-
         await outbox.EnqueueAsync(transaction, Topics.CouponPlacedV2, coupon.CouponId.ToString(), Envelope(placedV2), CancellationToken.None);
         await transaction.CommitAsync();
         return true;

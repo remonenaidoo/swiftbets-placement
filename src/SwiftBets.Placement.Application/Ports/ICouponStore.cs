@@ -17,7 +17,7 @@ public interface ICouponStore
     /// Coupon, legs, bets, the placed events (outbox) and the Persisted state commit together or not at all. V1 is null
     /// for a coupon only V2 can describe.
     /// </summary>
-    Task<bool> TryPersistAsync(PlacedCoupon coupon, int responseStatus, string responseJson, CouponPlacedV1? placed, CouponPlacedV2 placedV2);
+    Task<bool> TryPersistAsync(PlacedCoupon coupon, int responseStatus, string responseJson, CouponPlacedV2 placedV2);
 
     Task MarkCompletedAsync(Guid couponId);
 
