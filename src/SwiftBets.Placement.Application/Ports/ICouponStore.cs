@@ -30,4 +30,7 @@ public interface ICouponStore
     Task<IReadOnlyList<SagaIntent>> ClaimExpiredAsync(DateTimeOffset now, int batchSize, TimeSpan lease, CancellationToken cancellationToken);
 
     Task<PlacedCoupon?> GetCouponAsync(Guid couponId, CancellationToken cancellationToken);
+
+    /// <summary>Coupons placed in [from, to), oldest first, at most <paramref name="limit"/>.</summary>
+    Task<IReadOnlyList<CouponDigest>> DigestAsync(DateTimeOffset from, DateTimeOffset to, int limit, CancellationToken cancellationToken);
 }

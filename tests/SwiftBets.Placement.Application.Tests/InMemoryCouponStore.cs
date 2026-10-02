@@ -59,6 +59,10 @@ internal sealed class InMemoryCouponStore : ICouponStore
         return Task.FromResult<IReadOnlyList<SagaIntent>>([.. due.Select(i => Intents[i.CouponId])]);
     }
 
+    public Task<IReadOnlyList<CouponDigest>> DigestAsync(DateTimeOffset from, DateTimeOffset to, int limit, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<CouponDigest>>([.. Coupons.Where(c => c.PlacedAt >= from && c.PlacedAt < to).OrderBy(c => c.PlacedAt).Take(limit)
+            .Select(c => new CouponDigest(c.CouponId, c.Stake, c.PotentialPayout, c.Currency, c.PlacedAt))]);
+
     public Task<PlacedCoupon?> GetCouponAsync(Guid couponId, CancellationToken cancellationToken) =>
         Task.FromResult(Coupons.FirstOrDefault(c => c.CouponId == couponId));
 

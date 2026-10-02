@@ -45,6 +45,12 @@ public static class CouponEndpoints
                 : Results.Ok(await handler.HandleAsync([.. request.Legs.Select(l => new LegSelection(l.FixtureId, l.MarketId, l.SelectionId, l.Odds, 0))], cancellationToken)))
         .RequireAuthorization(Roles.Punter);
 
+        endpoints.MapGet("/internal/integrity/coupons", async (DateTimeOffset from, DateTimeOffset to, ICouponStore store, HttpContext context, CancellationToken cancellationToken) =>
+            to <= from || to - from > TimeSpan.FromHours(24)
+                ? Error.Validation("window_invalid", "Ask for a window of up to 24 hours, with to after from.").ToHttpResult(context)
+                : Results.Ok(await store.DigestAsync(from, to, 5000, cancellationToken)))
+        .RequireAuthorization(Roles.Service);
+
         endpoints.MapGet("/coupons/{couponId:guid}", async (Guid couponId, HttpContext context, ICouponStore store, CancellationToken cancellationToken) =>
         {
             var coupon = await store.GetCouponAsync(couponId, cancellationToken);
