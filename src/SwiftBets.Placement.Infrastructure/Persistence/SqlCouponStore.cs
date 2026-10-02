@@ -95,6 +95,12 @@ public sealed class SqlCouponStore(ISqlConnectionFactory connections, IOutbox ou
         return [.. rows.Select(r => r.ToIntent())];
     }
 
+    public async Task<IReadOnlyList<CouponDigest>> DigestAsync(DateTimeOffset from, DateTimeOffset to, int limit, CancellationToken cancellationToken)
+    {
+        await using var connection = await connections.OpenAsync(cancellationToken);
+        return [.. await connection.QueryAsync<CouponDigest>(new CommandDefinition(Sql.Get("Coupon.IntegrityDigest"), new { From = from, To = to, Limit = limit }, cancellationToken: cancellationToken))];
+    }
+
     public async Task<PlacedCoupon?> GetCouponAsync(Guid couponId, CancellationToken cancellationToken)
     {
         await using var connection = await connections.OpenAsync(cancellationToken);
