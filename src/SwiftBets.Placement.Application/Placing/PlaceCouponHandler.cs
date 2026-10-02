@@ -31,8 +31,19 @@ public sealed class PlaceCouponHandler(
     /// <summary>Config flag that opens system bets and bankers, once settlement reads V2 coupons.</summary>
     public const string SystemBetsFlag = "system-bets";
 
+    /// <summary>Every fixture on offer is football today; the live delay is keyed by sport so others slot in.</summary>
+    public const string Sport = "soccer";
+
     public async Task<PlacementResult> HandleAsync(PlaceCouponCommand command, CancellationToken cancellationToken)
     {
+        // An in-play coupon waits out the live delay before its saga starts, so the wait never counts against the saga
+        // deadline; the quote below then re-reads the offer, which is the refresh that catches a suspension or a move.
+        if (!settings.IsStopped && settings.LiveDelaySeconds(Sport) is > 0 and var delay
+            && (await offer.QuoteAsync(command.Legs, cancellationToken)).Values.Any(p => p.IsLive))
+        {
+            await Task.Delay(TimeSpan.FromSeconds(delay), time, cancellationToken);
+        }
+
         var now = time.GetUtcNow();
         var hash = RequestHash(command);
         var intent = new SagaIntent(Guid.CreateVersion7(), command.PunterId, command.IdempotencyKey, hash, command.Stake, command.Currency,
@@ -63,6 +74,11 @@ public sealed class PlaceCouponHandler(
         }
 
         var accepted = legs!;
+        if (settings.IsPreMatchOnly && accepted.Any(l => quotes[CouponQuote.Key(l.FixtureId, l.MarketId, l.SelectionId)].IsLive))
+        {
+            return await RejectAsync(command, couponId, "live_betting_unavailable", "Betting on matches in play is closed right now.");
+        }
+
         if (command.Bets is null && accepted.Any(l => l.IsBanker))
         {
             return await RejectAsync(command, couponId, "invalid_bets", "Bankers need a system bet such as a Trixie.");

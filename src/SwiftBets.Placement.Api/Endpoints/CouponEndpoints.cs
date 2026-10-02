@@ -39,6 +39,12 @@ public static class CouponEndpoints
         .AddEndpointFilter<ValidationFilter<PlaceCouponRequest>>()
         .RequireAuthorization(Roles.Punter);
 
+        endpoints.MapPost("/coupons/refresh", async (RefreshCouponRequest request, HttpContext context, RefreshCouponHandler handler, CancellationToken cancellationToken) =>
+            request.Legs is not { Count: > 0 and <= 20 }
+                ? Error.Validation("invalid_leg_count", "Refresh 1 to 20 legs.").ToHttpResult(context)
+                : Results.Ok(await handler.HandleAsync([.. request.Legs.Select(l => new LegSelection(l.FixtureId, l.MarketId, l.SelectionId, l.Odds, 0))], cancellationToken)))
+        .RequireAuthorization(Roles.Punter);
+
         endpoints.MapGet("/coupons/{couponId:guid}", async (Guid couponId, HttpContext context, ICouponStore store, CancellationToken cancellationToken) =>
         {
             var coupon = await store.GetCouponAsync(couponId, cancellationToken);
@@ -107,4 +113,8 @@ public static class CouponEndpoints
             });
         }
     }
+
+    public sealed record RefreshCouponRequest(IReadOnlyList<RefreshLeg> Legs);
+
+    public sealed record RefreshLeg(string FixtureId, string MarketId, string SelectionId, decimal Odds);
 }

@@ -7,6 +7,12 @@ public sealed class StaticSettings : IPlacementSettings
 {
     public bool IsStopped { get; set; }
 
+    public bool IsPreMatchOnly { get; set; }
+
+    public int LiveDelay { get; set; }
+
+    public int LiveDelaySeconds(string sport) => LiveDelay;
+
     public Dictionary<string, long> Stakes { get; } = new(StringComparer.Ordinal);
 
     public Dictionary<string, long> Payouts { get; } = new(StringComparer.Ordinal);
