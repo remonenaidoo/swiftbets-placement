@@ -71,7 +71,7 @@ public sealed class PlacementSagaTests(SqlServerFixture sql)
         var store = new SqlCouponStore(new SqlServerConnectionFactory(connectionString), new SqlServerOutbox(kafka, clock), clock);
         var wallet = new InMemoryWallet();
         var faults = new ArmableFaults();
-        var handler = new PlaceCouponHandler(store, new InMemoryLiability(), new StaticOffer(StaticOffer.Home), wallet, new StaticSettings(), faults, Options.Create(new PlacementOptions()), clock);
+        var handler = new PlaceCouponHandler(store, new InMemoryLiability(), new StaticExposureLimits(), new StaticOffer(StaticOffer.Home), wallet, new StaticSettings(), faults, Options.Create(new PlacementOptions()), clock);
         return (handler, new SweepOrphansHandler(store, wallet, clock, NullLogger<SweepOrphansHandler>.Instance), wallet, faults, clock, connectionString);
     }
 }

@@ -18,6 +18,7 @@ namespace SwiftBets.Placement.Application.Placing;
 public sealed class PlaceCouponHandler(
     ICouponStore store,
     ILiabilityLedger liabilities,
+    IExposureLimits exposure,
     IOfferReader offer,
     IWalletClient wallet,
     IPlacementSettings settings,
@@ -115,6 +116,11 @@ public sealed class PlaceCouponHandler(
         }
 
         var totalOdds = isSystem ? decimal.Round((decimal)payout / totalStake, 6, MidpointRounding.ToZero) : PayoutMath.TotalOdds(accepted.Select(l => l.Odds));
+        if (accepted.FirstOrDefault(l => exposure.IsSuspended(l.FixtureId)) is { } capped)
+        {
+            return await RejectAsync(command, couponId, "fixture_exposure_capped", $"{capped.FixtureId} is not taking new bets right now.");
+        }
+
         var liability = await liabilities.GetAsync([.. accepted.Select(l => l.FixtureId)], cancellationToken);
         if (liability.Any(l => l.Value + payout > RiskLimits.Default.MaxFixtureLiability))
         {

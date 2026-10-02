@@ -12,6 +12,7 @@ using SwiftBets.Placement.Application.Identity;
 using SwiftBets.Placement.Application.Placing;
 using SwiftBets.Placement.Application.Ports;
 using SwiftBets.Contracts.Config;
+using SwiftBets.Contracts.Risk;
 using SwiftBets.Contracts.Messaging;
 using SwiftBets.Placement.Infrastructure.Config;
 using SwiftBets.Placement.Infrastructure.Identity;
@@ -31,6 +32,8 @@ public static class InfrastructureRegistration
         services.AddKafkaMessaging(configuration);
         services.AddSqlServerOutbox(configuration);
         services.AddCompactedState<ConfigEntryV1>(Topics.ConfigEntries);
+        services.AddCompactedState<ExposureLimitV1>(Topics.ExposureLimits);
+        services.AddSingleton<IExposureLimits, CompactedExposureLimits>();
         services.AddSingleton<IPlacementSettings, ConfigPlacementSettings>();
         services.AddSwiftBetsRedis(Required(configuration, "ConnectionStrings:Redis"));
         services.AddFaultInjection(configuration);
