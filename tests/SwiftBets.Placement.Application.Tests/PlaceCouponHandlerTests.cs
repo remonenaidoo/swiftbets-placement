@@ -62,6 +62,29 @@ public sealed class PlaceCouponHandlerTests
     }
 
     [Fact]
+    public async Task A_fixture_risk_has_suspended_refuses_new_coupons_before_anything_is_held()
+    {
+        var exposure = new StaticExposureLimits { Suspended = { "fx-1" } };
+        var (handler, store, wallet, _, _) = Build(exposure: exposure);
+
+        var refused = await handler.HandleAsync(Command("key-000021"), CancellationToken.None);
+
+        refused.Status.ShouldBe(422);
+        refused.Body.ShouldContain("fixture_exposure_capped");
+        store.Coupons.ShouldBeEmpty();
+        wallet.Balance.ShouldBe(100_000);
+    }
+
+    [Fact]
+    public async Task A_suspension_on_another_fixture_does_not_touch_this_one()
+    {
+        var exposure = new StaticExposureLimits { Suspended = { "fx-other" } };
+        var (handler, _, _, _, _) = Build(exposure: exposure);
+
+        (await handler.HandleAsync(Command("key-000022"), CancellationToken.None)).Status.ShouldBe(201);
+    }
+
+    [Fact]
     public async Task Stake_and_payout_limits_refuse_in_the_coupon_currency_only()
     {
         var settings = new StaticSettings();
@@ -86,12 +109,12 @@ public sealed class PlaceCouponHandlerTests
     private static PlaceCouponCommand Command(string key) =>
         new(Punter, key, 2_500, "ZAR", [new LegSelection("fx-1", "fx-1-1x2", "home", 2.00m, 3)]);
 
-    private static (PlaceCouponHandler Handler, InMemoryCouponStore Store, InMemoryWallet Wallet, FakeTimeProvider Clock, SweepOrphansHandler Sweeper) Build(StaticSettings? settings = null)
+    private static (PlaceCouponHandler Handler, InMemoryCouponStore Store, InMemoryWallet Wallet, FakeTimeProvider Clock, SweepOrphansHandler Sweeper) Build(StaticSettings? settings = null, StaticExposureLimits? exposure = null)
     {
         var store = new InMemoryCouponStore();
         var wallet = new InMemoryWallet();
         var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        var handler = new PlaceCouponHandler(store, new InMemoryLiability(), new StaticOffer(StaticOffer.Home), wallet, settings ?? new StaticSettings(), new ArmableFaults(), Options.Create(new PlacementOptions()), clock);
+        var handler = new PlaceCouponHandler(store, new InMemoryLiability(), exposure ?? new StaticExposureLimits(), new StaticOffer(StaticOffer.Home), wallet, settings ?? new StaticSettings(), new ArmableFaults(), Options.Create(new PlacementOptions()), clock);
         return (handler, store, wallet, clock, new SweepOrphansHandler(store, wallet, clock, NullLogger<SweepOrphansHandler>.Instance));
     }
 }

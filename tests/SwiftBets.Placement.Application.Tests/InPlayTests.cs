@@ -64,7 +64,7 @@ public sealed class InPlayTests
     private static (PlaceCouponHandler, FakeTimeProvider) Build(IOfferReader offer, StaticSettings settings)
     {
         var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        return (new PlaceCouponHandler(new InMemoryCouponStore(), new InMemoryLiability(), offer, new InMemoryWallet(), settings, new ArmableFaults(), Options.Create(new PlacementOptions()), clock), clock);
+        return (new PlaceCouponHandler(new InMemoryCouponStore(), new InMemoryLiability(), new StaticExposureLimits(), offer, new InMemoryWallet(), settings, new ArmableFaults(), Options.Create(new PlacementOptions()), clock), clock);
     }
 
     private sealed class SwitchableOffer(QuotedPrice price) : IOfferReader

@@ -112,7 +112,7 @@ public sealed class SystemBetTests
         var store = new InMemoryCouponStore();
         var wallet = new InMemoryWallet();
         var settings = new StaticSettings();
-        var handler = new PlaceCouponHandler(store, new InMemoryLiability(), new StaticOffer(Prices), wallet, settings, new ArmableFaults(),
+        var handler = new PlaceCouponHandler(store, new InMemoryLiability(), new StaticExposureLimits(), new StaticOffer(Prices), wallet, settings, new ArmableFaults(),
             Options.Create(new PlacementOptions()), new FakeTimeProvider(DateTimeOffset.UtcNow));
         return (handler, store, wallet, settings);
     }

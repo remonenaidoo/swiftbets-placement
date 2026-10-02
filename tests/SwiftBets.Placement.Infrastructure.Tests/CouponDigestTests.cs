@@ -41,7 +41,7 @@ public sealed class CouponDigestTests(SqlServerFixture sql)
         var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
         var kafka = Options.Create(new KafkaOptions { BootstrapServers = "unused:9092", Environment = "test", ClientId = "test" });
         var store = new SqlCouponStore(new SqlServerConnectionFactory(connectionString), new SqlServerOutbox(kafka, clock), clock);
-        var handler = new PlaceCouponHandler(store, new InMemoryLiability(), new StaticOffer(StaticOffer.Home), new InMemoryWallet(), new StaticSettings(), new ArmableFaults(), Options.Create(new PlacementOptions()), clock);
+        var handler = new PlaceCouponHandler(store, new InMemoryLiability(), new StaticExposureLimits(), new StaticOffer(StaticOffer.Home), new InMemoryWallet(), new StaticSettings(), new ArmableFaults(), Options.Create(new PlacementOptions()), clock);
         var result = await handler.HandleAsync(new PlaceCouponCommand(Guid.NewGuid(), "digest-0001", 2_500, "ZAR", [new LegSelection("fx-1", "fx-1-1x2", "home", 2.00m, 3)]), CancellationToken.None);
         result.Status.ShouldBe(201);
         return (store, clock.GetUtcNow());
